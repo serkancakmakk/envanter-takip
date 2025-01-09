@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Envanter Yönetim Sistemi v1.3012</title>
+   
+</head>
+<body>
+
+    <div class="login-form">
+        <h2>Giriş Yap</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <label for="company_code">Şirket Kodu:</label>
+            <input type="text" id="company_code" name="company_code" required>
+
+            <label for="username">Kullanıcı Adı:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">Şifre:</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit">Giriş Yap</button>
+        </form>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+
+</body>
+</html>

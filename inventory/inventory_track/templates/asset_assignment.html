@@ -1,0 +1,197 @@
+{% extends '_base.html' %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple Select Zimmet Formu</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Select2 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet">
+
+    <style>
+        /* Yükleniyor mesajı için stil */
+        #loading-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <form id="zimmet-form" method="POST" action="{% url 'asset_assignment_view' company.code %}" class="mt-4">
+        <div class="container mt-5">
+            <h2 class="mb-4">Zimmet Formu</h2>
+            <div class="row">
+                <!-- Sol Taraf: Ürün Seçimi -->
+                <div class="col-md-6">
+                    <!-- Çoklu Seçim için Select -->
+                    <select id="product-select" class="form-select mb-3" multiple="multiple" style="height: 200px;">
+                        <!-- Ürünler burada dinamik olarak yüklenecek -->
+                    </select>
+                    <small class="text-muted">Birden fazla ürünü seçebilirsiniz.</small>
+                </div>
+
+                <!-- Sağ Taraf: Seçilen Ürünler -->
+                <div class="col-md-6">
+                    <h5>Seçtiklerim</h5>
+                    <ul id="selected-products" class="list-group" style="max-height: 300px; overflow-y: auto;">
+                        <!-- Seçilen ürünler buraya eklenecek -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Form Alanları -->
+            {% csrf_token %}
+            <input type="hidden" id="selected-product-ids" name="selected_product_ids">
+
+            <!-- Alan Kişi -->
+            <div class="mb-3">
+                <label for="recipient" class="form-label">Alan Kişi</label>
+                <select id="recipient" name="assign_to" class="form-select" required>
+                    <option value="">Kişi Seç</option>
+                    {% for user in employees %}
+                        <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="assign_by" class="form-label">Zimmet yapılan firma adı :</label>
+                <input type="text" class="form-control" name="appointed_company">
+            </div>
+            <div class="mb-3">
+                <label for="assign_by" class="form-label">Zimmet yapılan firma adresi :</label>
+                <input type="text" class="form-control" name="appointed_address">
+            </div>
+
+            <!-- Veren Kişi -->
+            <div class="mb-3">
+                <label for="assign_by" class="form-label">Veren Kişi</label>
+                <input type="text" class="form-control" name="assign_by" placeholder="Username" value="{{request.user.first_name}} {{request.user.last_name}}" aria-label="Username" aria-describedby="basic-addon1" readonly="true">
+            </div>
+
+            <!-- Verilme Nedeni -->
+            <div class="mb-3">
+                <label for="info" class="form-label">Verilme Nedeni (İsteğe Bağlı)</label>
+                <textarea type="textarea" class="form-control" name="info" placeholder="Verilme Nedeni ?"></textarea>
+            </div>
+
+            <!-- Zimmet Tarihi -->
+            <div class="mb-3">
+                <label for="assign_date" class="form-label">Zimmet Tarihi</label>
+                <input type="date" name="assign_date" id="assign_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
+            </div>
+
+            <!-- Geri Verilecek Tarih -->
+            <div class="mb-3">
+                <label for="return_date" class="form-label">Geri Verilecek Tarih (İsteğe Bağlı)</label>
+                <input type="date" name="return_date" id="return_date" class="form-control">
+            </div>
+            <input type="hidden" id="company-code" value={{company.code}}>
+            <!-- Form Gönder -->
+            <button type="submit" class="btn btn-primary">Zimmeti Kaydet</button>
+        </div>
+    </form>
+
+    <!-- Bootstrap JS ve jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function () {
+            let companyCode = $('#company-code').val();
+    
+            // Select2 ile lazy loading özelliği ekle
+            $('#product-select').select2({
+                placeholder: "Ürün seçin",
+                allowClear: true,
+                ajax: {
+                    url: `/api/get_products_api/${companyCode}/`, // API endpoint'i
+                    dataType: 'json',
+                    delay: 250, // Kullanıcı yazmayı bitirdikten sonra API çağrısını bekletme süresi (ms)
+                    data: function (params) {
+                        return {
+                            q: params.term, // Kullanıcıdan gelen arama terimi
+                            page: params.page || 1 // Sayfalama için sayfa numarası
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+    
+                        return {
+                            results: data.results.map(item => ({
+                                id: item.id,
+                                text: item.name
+                            })),
+                            pagination: {
+                                more: data.has_next // API'den daha fazla veri olup olmadığını belirtir
+                            }
+                        };
+                    },
+                    cache: true // Daha önce getirilen sonuçları önbellekte tutar
+                }
+            });
+    
+            // Ürün Seçimi
+            $('#product-select').on('select2:select', function (e) {
+                const selectedProduct = e.params.data;
+                $('#selected-products').append(
+                    `<li class="list-group-item" data-id="${selectedProduct.id}">
+                        ${selectedProduct.text}
+                        <button type="button" class="btn btn-danger btn-sm remove-product float-end">Sil</button>
+                    </li>`
+                );
+                updateSelectedProductsInput();
+            });
+    
+            // Ürün Silme
+            $('#selected-products').on('click', '.remove-product', function () {
+                const productName = $(this).closest('li').text().trim();
+    
+                Swal.fire({
+                    title: 'Ürünü Silmek İstediğinizden Emin Misiniz?',
+                    text: `${productName} ürününü silmek istediğinizden emin misiniz?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Evet, Sil',
+                    cancelButtonText: 'Hayır'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $(this).closest('li').remove();
+                        updateSelectedProductsInput();
+                    }
+                });
+            });
+    
+            // Gizli inputu güncelle
+            function updateSelectedProductsInput() {
+                const selectedProductIds = $('#selected-products li').map(function () {
+                    return $(this).data('id');
+                }).get();
+    
+                $('#selected-product-ids').val(selectedProductIds.join(','));
+            }
+        });
+    </script>
+        
+
+</body>
+</html>
+
+{% endblock %}
