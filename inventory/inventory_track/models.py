@@ -160,69 +160,99 @@ from django.contrib.contenttypes.models import ContentType
 class Category(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=50, null=False, blank=False)
-    # content_type ve object_id'yi ekleyerek GenericForeignKey için gerekli olan alanlar
     created_by_content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True)
     created_by_object_id = models.PositiveIntegerField(null=True, blank=True)
-    # GenericForeignKey oluşturuluyor
     created_by = GenericForeignKey('created_by_content_type', 'created_by_object_id')
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name if self.is_active else f"{self.name} (Inactive)"
+
     class Meta:
         db_table = "Category"
+
 class Brand(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)  # Yeni ekleme
     name = models.CharField(max_length=50, null=False, blank=False)
-    created_by = models.ForeignKey(LdapUser, on_delete=models.SET_NULL, null=True, blank=True)
+    created_by_content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True)
+    created_by_object_id = models.PositiveIntegerField(null=True, blank=True)
+    created_by = GenericForeignKey('created_by_content_type', 'created_by_object_id')
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+
     class Meta:
         db_table = "Brand"
+
 class Model(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=50, null=False, blank=False)
-    created_by = models.ForeignKey(LdapUser, on_delete=models.SET_NULL, null=True, blank=True)
-    unit = models.CharField(max_length=50,null=True,blank=True)
+    created_by_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_by_models'
+    )
+    created_by_object_id = models.PositiveIntegerField(null=True, blank=True)
+    created_by = GenericForeignKey('created_by_content_type', 'created_by_object_id')
+    is_active = models.BooleanField(default=True)
+    unit = models.CharField(max_length=50, null=True, blank=True)
+
     def __str__(self):
         return self.name
+
     class Meta:
         db_table = "Model"
-# class AssetAssignment(models.Model):
-#     employee = models.ForeignKey(LdapUser, on_delete=models.CASCADE)
-#     product = models.ForeignKey(Product,on_delete=models.CASCADE)
-#     assetSerialNumber = models.CharField(max_length=255, null=False, blank=False)
-#     assigned_at = models.DateTimeField(auto_now_add=True)
-#     returned_at = models.DateTimeField(null=True, blank=True)
-
-#     def __str__(self):
-#         return f"Asset {self.model.name} ({self.asset_serial_number}) assigned to {self.employee.name}"
 
 class ProductStatus(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=50, null=False, blank=False)
-    created_by = models.ForeignKey(LdapUser, on_delete=models.SET_NULL, null=True, blank=True)
+    created_by_content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True)
+    created_by_object_id = models.PositiveIntegerField(null=True, blank=True)
+    created_by = GenericForeignKey('created_by_content_type', 'created_by_object_id')
+    is_active = models.BooleanField(default=True)
+
     def __str__(self):
         return self.name
+
     class Meta:
         db_table = "ProductStatus"
+
 class Product(BaseModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
     model = models.ForeignKey(Model, on_delete=models.SET_NULL, null=True, blank=True)
-    created_by = models.ForeignKey(LdapUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_products')  # related_name ekleyin
+    created_by_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_by_products'  # Çakışmayı önlemek için benzersiz bir ad ekleyin
+    )
+    created_by_object_id = models.PositiveIntegerField(null=True, blank=True)
+    created_by = GenericForeignKey('created_by_content_type', 'created_by_object_id')
+    is_active = models.BooleanField(default=True)
     serial_number = models.CharField(max_length=255, null=False, blank=False)
     status = models.ForeignKey(ProductStatus, on_delete=models.SET_NULL, null=True, blank=True)
     date_joined = models.DateTimeField(auto_now_add=True)
-    assign_to = models.ForeignKey(LdapUser, on_delete=models.CASCADE, related_name='assigned_products',null=True,blank=True)  # related_name ekleyin
+    assign_to = models.ForeignKey(
+        'LdapUser',  # LdapUser'ın tanımlı olduğunu varsayıyoruz
+        on_delete=models.CASCADE,
+        related_name='assigned_products',
+        null=True,
+        blank=True
+    )
+
     class Meta:
         db_table = 'Product'
+
     def __str__(self):
-        return f"{self.category} {self.brand} {self.model}"
+        return f"{self.category} - {self.brand} - {self.model}"
 
 class AssetAssignment(models.Model):
     company = models.ForeignKey('Company', on_delete=models.CASCADE)  # Ürün ile ilişki

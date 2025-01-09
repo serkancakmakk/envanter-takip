@@ -58,6 +58,7 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Veritabanı tabanlı s
 # Application definition
 
 INSTALLED_APPS = [
+    'silk',
     'ldap3',
     'inventory_api',
     'inventory_track',
@@ -80,6 +81,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'inventory_track.middleware.CheckCompanyMiddleware',
+    'silk.middleware.SilkyMiddleware',
     
 ]
 

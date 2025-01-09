@@ -242,6 +242,7 @@ def get_products(company_code):
     try:
         company = Company.objects.get(code=company_code)
         products = Product.objects.filter(company=company)
+        print(products)
         return products
     except Company.DoesNotExist:
         # Eğer şirket bulunamazsa boş bir QuerySet döndür
@@ -459,7 +460,7 @@ def asset_assignment_view(request, company_code):
     categories = Category.objects.filter(company=company)
 
     today = date.today()
-    products = Product.objects.filter(company=company, assign_to__isnull=True)
+    products = Product.objects.filter(company=company, assign_to__isnull=True).select_related('category', 'brand', 'model')
 
     if request.method == 'POST':
         selected_products = request.POST.get('selected_product_ids')
@@ -718,14 +719,24 @@ def email_update_config(request, user_id,company_code):
         form = EmailUpdateForm(instance=ldap_user)
 
     return render(request, 'email_update_form.html', {'form': form, 'ldap_user': ldap_user,'company':company,})
+from django.core.paginator import Paginator
 def companies(request):
     if request.user.company.code != settings.MASTER_COMPANY:
         messages.error(request, "Lütfen ürünleri ve bir kullanıcı seçin.")
         return redirect('company_dashboard', request.user.company.code)
+
     add_company_form = CompanyCreateForm()
-    companies = Company.objects.all()  # Tüm şirketleri getir
+
+    # Tüm şirketleri al ve paginator kullan
+    company_list = Company.objects.all()
+    paginator = Paginator(company_list, 10)  # Sayfa başına 10 şirket gösterilecek
+
+    # `page` parametresini al
+    page_number = request.GET.get('page')
+    companies = paginator.get_page(page_number)
+
     context = {
-        'add_company_form':add_company_form,
+        'add_company_form': add_company_form,
         'companies': companies,
     }
     return render(request, 'companies.html', context)
@@ -735,3 +746,13 @@ def check_code(request, code):
     
     # JSON olarak yanıt döndür
     return JsonResponse({'exists': exists})
+def available_products(request, company_code):
+    """
+    Henüz zimmetlenmemiş ürünleri getirir
+    """
+    print()
+    company = get_company(company_code)
+    # Correct way to check for null values in assing_to field
+    assignments_items = Product.objects.filter(company=company, assign_to__isnull=True)
+    print(assignments_items)
+    return render(request, 'available_products.html', {'assignments_items': assignments_items})

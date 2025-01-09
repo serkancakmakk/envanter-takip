@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, render
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from inventory_track.mixins import get_company
-from inventory_track.models import Brand, Category, Company, Model, ProductStatus
+from inventory_track.models import Brand, Category, Company, Model, Product, ProductStatus
 from rest_framework.exceptions import NotFound
 # Create your views here.
 from rest_framework.permissions import IsAuthenticated
@@ -162,7 +162,12 @@ class CreateStatusAPIView(APIView):
         # Durum oluştur
         new_status = ProductStatus.objects.create(name=status_name, company=company)
         return Response({"message": "Durum başarıyla oluşturuldu.", "id": new_status.id}, status=status.HTTP_201_CREATED)
-    class CompanyListView(APIView):
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+from inventory_track.models import Company
+from .serializers import CompanySerializer, ProductSerializer     
+class CompanyListView(APIView):
     def get(self, request,company_code):
         search_term = request.GET.get('search', '')
         page_number = request.GET.get('page', 1)
