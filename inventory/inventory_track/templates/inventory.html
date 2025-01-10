@@ -47,9 +47,8 @@
             });
         </script>
     {% endfor %}
-{% endif %}
+    {% endif %}
 
-        
     <div class="container mt-5">
         <h1 class="mb-4">{{ company.name }} - Ürün Envanteri</h1>
 
@@ -66,20 +65,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for product in products %}
-                        <tr>
-                            <td>{{ product.category.name }}</td>
-                            <td>{{ product.brand.name }}</td>
-                            <td>{{ product.model }}</td>
-                            <td>{{ product.serial_number }}</td>
-                            <td>{{ product.model.unit }}</td>
-                            <td>{{ product.status }}</td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="5">Ürün bulunamadı.</td>
-                        </tr>
-                    {% endfor %}
+                    <!-- Dinamik veri burada yüklenecek -->
                 </tbody>
             </table>
         </div>
@@ -92,7 +78,25 @@
 
     <script>
         $(document).ready(function() {
-            $('#inventory-table').DataTable();  // DataTables'ı aktive et
+            $('#inventory-table').DataTable({
+                processing: true,  // Verilerin yüklenmesi
+                serverSide: true,  // Sunucu taraflı işlem
+                ajax: {
+                    url: '{% url "get_products" company_code=company.code %}',  // AJAX isteği gönderilecek URL
+                    data: function(d) {
+                        // Burada AJAX isteğine ek parametreler ekleyebilirsiniz
+                        d.search = $('#search-input').val();  // Arama filtreleme
+                    }
+                },
+                columns: [
+                    { data: 'category__name' },
+                    { data: 'brand__name' },
+                    { data: 'model__name' },
+                    { data: 'serial_number' },
+                    { data: 'model__unit' },
+                    { data: 'status' }
+                ]
+            });
         });
     </script>
 

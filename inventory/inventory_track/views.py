@@ -237,16 +237,39 @@ from django.db.models import Count
 from .models import Company, Product
 
 from django.db.models import Count
-def get_products(company_code):
-    # Belirtilen şirket koduna göre ürünleri filtrele
+def get_products(request, company_code):
+    search = request.GET.get('search', '')
+    start = int(request.GET.get('start', 0))  # Sayfa başlangıç
+    length = int(request.GET.get('length', 10))  # Sayfa uzunluğu
+
     try:
         company = Company.objects.get(code=company_code)
-        products = Product.objects.filter(company=company)
-        print(products)
-        return products
+        # 'model__unit' ile modelin unit'ine erişiyoruz
+        products = Product.objects.select_related('category', 'brand', 'model', 'model__unit')\
+                                  .filter(company__code=company_code)
+
+        if search:
+            products = products.filter(name__icontains=search)
+
+        # Sayfalama işlemi
+        paginator = Paginator(products, length)
+        page = paginator.page((start // length) + 1)
+        data = list(page.object_list.values(
+            'category__name', 
+            'brand__name', 
+            'model__name',  # Modelin ismi
+            'serial_number', 
+            'model__unit',  # unit modelinden name alanı
+            'status'
+        ))
+
+        return JsonResponse({
+            'recordsTotal': paginator.count,
+            'recordsFiltered': paginator.count,
+            'data': data
+        })
     except Company.DoesNotExist:
-        # Eğer şirket bulunamazsa boş bir QuerySet döndür
-        return Product.objects.none()
+        return JsonResponse({'error': 'Geçersiz şirket kodu'}, status=400)
 
 def inventory(request, company_code):
     # Eğer kullanıcı master kullanıcı ise tüm firmalara erişebilir
@@ -269,7 +292,7 @@ def inventory(request, company_code):
             return redirect(request.META.get('HTTP_REFERER'))
 
     # Ürünleri getir
-    products = get_products(company_code)
+    products = get_products(request, company_code)  # Burada request'i de geçirdiğinizden emin olun
 
     context = {
         'company': company,

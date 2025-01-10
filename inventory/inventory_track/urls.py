@@ -30,6 +30,7 @@ urlpatterns = [
     path('manage_entities/<str:company_code>', views.manage_entities_view, name='manage_entities'),
     # get 
     path('get-brands/<str:company_code>', views.get_brands, name='get_brands'),
+    path('get_products/<str:company_code>', views.get_products, name='get_products'),
     # path('get-status/<str:company_code>', views.get_product_statuses, name='get_status'),
     path('get-models/<str:company_code>', views.get_models, name='get_models'),
     # path('get-categories/<str:company_code>', views.get_categories, name='get_categories'),
