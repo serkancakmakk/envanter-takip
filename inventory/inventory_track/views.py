@@ -614,12 +614,14 @@ def add_product_status_view(request,company_code):
 def manage_entities_view(request,company_code):
     company = get_company(company_code)
     category_form = CategoryForm(company=company)
+    categories = Category.objects.filter(company=company)
     brand_form = BrandForm(company=company)
     product_status_form = ProductStatusForm()
     model_form = ModelForm(company=company)
     brands = Brand.objects.filter(company=request.user.company)
     return render(request, 'manage_entities.html', {
         'brands':brands,
+        'categories':categories,
         'product_status_form':product_status_form,
         'category_form': category_form,
         'brand_form': brand_form,

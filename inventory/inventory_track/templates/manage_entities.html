@@ -4,6 +4,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- DataTables CSS -->
+<link href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css" rel="stylesheet">
+
     <meta name="csrf-token" content="{{ csrf_token }}">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -18,7 +21,7 @@
     <div class="container mt-5">
         <div class="row">
             <!-- Category Section -->
-            <div class="col-lg-3">
+            <div class="col-lg-4">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">Kategoriler</h5>
@@ -36,15 +39,42 @@
                         </form>
                         <hr>
                         <h6>Var Olan Kategoriler</h6>
-                        <table id="category-table" class="table table-striped mt-3">
+                        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+                        <!-- DataTables JS -->
+                        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+                        
+                        <!-- DataTables CSS -->
+                        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+                        
+                        <!-- DataTable Başlatma -->
+                        <script>
+                            $(document).ready(function() {
+                                $('#category-table2').DataTable();
+                            });
+                        </script>                        
+                        <table id="category-table2" class="table table-striped mt-3">
                             <thead>
                                 <tr>
                                     <th>#</th>
                                     <th>Category Adı</th>
+                                    <th>İşlem</th>
                                 </tr>
                             </thead>
-                            <tbody id="category-table-body">
-                                <!-- Populated dynamically -->
+                            <tbody id="category-table-body2">
+                                {% for category in categories %}
+                                    <tr>
+                                        <td>{{ category.id }}</td>
+                                        <td>{{ category.name }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-warning delete-category-btn" data-id="{{ category.id }}" data-name="{{ category.name }}">Sil</button>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="3">Henüz kategori eklenmemiş.</td>
+                                    </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -161,7 +191,7 @@
         
             </script>
             
-<div class="col-lg-3">
+<div class="col-lg-2">
     <div class="card">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Ürün Durumu</h5>
@@ -234,6 +264,7 @@
   </script>
     </body>
 </body>
+<script src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"></script>
 <script src="{% static 'js/status.js' %}"></script>  <!-- Öncelikli JS dosyası -->
 <script src="{% static 'js/brand.js' %}"></script>  <!-- Öncelikli JS dosyası -->
 <script src="{% static 'js/load_model.js' %}"></script>  <!-- loadCategories fonksiyonunu burada tanımlayın -->
