@@ -194,7 +194,7 @@ class GetProductsAPI(APIView):
         # Arama filtresi: Ürün adı veya kategori adı
         products = Product.objects.filter(
             company=company,
-            category__name__icontains=query  # Kategori adına göre filtreleme
+            serial_number__icontains=query  # Kategori adına göre filtreleme
         )
         total_count = products.count()  # Toplam ürün sayısı
 
@@ -207,7 +207,7 @@ class GetProductsAPI(APIView):
         products_data = [
             {
                 'id': product.id,
-                'name': f"{product.category.name} - {product.brand.name} - {product.model.name}",
+                'name': f"{product.category.name} - {product.brand.name} - {product.model.name} - {product.serial_number}",
             }
             for product in products
         ]

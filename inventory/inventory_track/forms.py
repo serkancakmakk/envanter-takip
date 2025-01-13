@@ -1,6 +1,6 @@
 
 from django import forms
-from .models import Brand, Category, Company, LdapUser, Model, Product,ProductStatus,LdapConfig
+from .models import Brand, Category, Company, CustomUser, LdapUser, Model, Product,ProductStatus,LdapConfig
 # for company
 class ProductCreateForm(forms.ModelForm):
     class Meta:
@@ -89,3 +89,84 @@ class EmailUpdateForm(forms.ModelForm):
     class Meta:
         model = LdapUser
         fields = ['email','email_password']
+
+from django import forms
+from .models import CustomUser
+from django.core.exceptions import ValidationError
+from django.utils.safestring import mark_safe
+class CustomUserCreationForm(forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Şifrenizi girin',
+            'class': 'form-control',
+        }),
+        label="Şifre",
+        min_length=8,  # Minimum şifre uzunluğu
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Şifrenizi tekrar girin',
+            'class': 'form-control',
+        }),
+        label="Şifre (Tekrar)",
+    )
+
+    class Meta:
+        """
+        Custom user sadece destek kullanıcıları içindir.
+        """
+        model = CustomUser
+        fields = ['username', 'email', 'first_name', 'last_name', 'phone']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Kullanıcı adı'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'E-posta'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ad'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Soyad'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Telefon'}),
+        }
+        labels = {
+            'username': mark_safe('<strong>Kullanıcı Adı</strong>'),
+            'email': mark_safe('<strong>E-Posta Adresi</strong>'),
+            'first_name': mark_safe('<strong>Ad</strong>'),
+            'last_name': mark_safe('<strong>Soyad</strong>'),
+            'phone': mark_safe('<strong>Telefon Numarası</strong>'),
+        }
+
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        if password and confirm_password and password != confirm_password:
+            raise ValidationError("Şifreler eşleşmiyor. Lütfen tekrar deneyin.")
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data['password'])  # Şifreyi hashleyin
+        if commit:
+            user.save()
+        return user
+class CustomUserEditForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'email', 'phone', 'is_active']
+
+    # Telefon alanı için ek özellikler (örneğin, uzunluk kontrolü, regex vb.)
+    phone = forms.CharField(max_length=15, required=False, label="Telefon", widget=forms.TextInput(attrs={'placeholder': 'Telefon numarasını girin'}))
+
+    # Formdaki verilerin doğruluğunu kontrol etme (isteğe bağlı)
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone')
+        # Telefon numarasıyla ilgili ek doğrulamalar yapılabilir
+        return phone
+
+    # Formu kaydederken özel işlemler yapılabilir
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        # Eğer commit=False ise, veritabanına kaydetmeden önce düzenlemeler yapılabilir
+        if commit:
+            user.save()
+        return user

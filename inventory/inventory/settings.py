@@ -58,7 +58,8 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Veritabanı tabanlı s
 # Application definition
 
 INSTALLED_APPS = [
-    'silk',
+    'widget_tweaks',
+    # 'silk',
     'ldap3',
     'inventory_api',
     'inventory_track',
@@ -81,7 +82,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'inventory_track.middleware.CheckCompanyMiddleware',
-    'silk.middleware.SilkyMiddleware',
+    # 'silk.middleware.SilkyMiddleware',
     
 ]
 
@@ -145,7 +146,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'tr-TR'
 
 TIME_ZONE = 'UTC'
 

@@ -1,30 +1,30 @@
-<!-- create_user.html -->
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <title>Kullanıcı Oluştur</title>
-</head>
-<body>
-    <h1>Kullanıcı Oluştur</h1>
-    <form method="post">
-        {% csrf_token %}
-        <label for="username">Kullanıcı Adı:</label>
-        <input type="text" name="username" required><br><br>
-        
-        <label for="first_name">Ad:</label>
-        <input type="text" name="first_name" required><br><br>
+{% extends '_base.html' %}
 
-        <label for="last_name">Soyad:</label>
-        <input type="text" name="last_name" required><br><br>
-
-        <label for="email">E-posta:</label>
-        <input type="email" name="email" required><br><br>
-
-        <label for="password">Şifre:</label>
-        <input type="password" name="password" required><br><br>
-
-        <button type="submit">Kullanıcıyı Oluştur</button>
-    </form>
-</body>
-</html>
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg rounded">
+                <div class="card-header bg-warning text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i> Kullanıcı Oluştur
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted text-center">Lütfen aşağıdaki formu doldurarak yeni bir kullanıcı oluşturun.</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-warning w-100 mt-3 text-white">
+                            <i class="fas fa-save me-2"></i> Kullanıcıyı Kaydet
+                        </button>
+                    </form>
+                </div>
+                <div class="card-footer text-center text-muted small">
+                    <i class="fas fa-info-circle me-1"></i> Tüm alanlar zorunludur.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

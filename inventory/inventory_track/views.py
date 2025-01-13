@@ -1,5 +1,6 @@
 
 import imaplib
+import json
 import os
 from django.conf import settings
 from django.http import Http404, HttpResponse, HttpResponseForbidden
@@ -15,7 +16,7 @@ from ldap3 import Server, Connection, ALL, NTLM
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .utils import get_all_ldap_users_and_groups
-from .forms import BrandForm, CategoryForm, CompanyCreateForm, EmailUpdateForm, ModelForm
+from .forms import BrandForm, CategoryForm, CompanyCreateForm, CustomUserEditForm, EmailUpdateForm, ModelForm
 # For Company <---
 from django.contrib.auth.decorators import login_required
 # views.py
@@ -138,6 +139,46 @@ def company_dashboard(request, company_code):
 from django.contrib.auth import get_user_model
 import logging
 logger = logging.getLogger(__name__)
+from django.shortcuts import render, redirect
+from .forms import CustomUserCreationForm
+from .models import Company
+""" Kullanıcı Ekleme Ve Düzenleme İşlemleri """
+def edit_user(request, user_id):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        user = get_object_or_404(CustomUser, id=user_id)
+        user.first_name = data.get('first_name', user.first_name)
+        user.last_name = data.get('last_name', user.last_name)
+        user.email = data.get('email', user.email)
+        user.phone = data.get('phone', user.phone)
+        user.is_active = data.get('is_active', user.is_active)
+        user.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+def list_users(request,company_code):
+    users = CustomUser.objects.values('id', 'username', 'email','first_name','last_name','is_active','phone')
+    context = {
+        'users':users,
+    }
+    return render(request,'list_users.html',context)
+@check_company_code
+def create_user(request, company_code):
+    user_company = get_object_or_404(Company,code=  settings.MASTER_COMPANY)
+    if request.method == "POST":
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.tag = 'Support'
+            user.company = user_company  # Şirketi kullanıcıya ata
+            user.company_code = user_company.code # Şirket kodunu kullanıcıya ata
+            user.save()
+            messages.success(request,'Kullanıcı Başarıyla Oluşturuldu.')
+            return redirect('create_user',request.user.company.code)  # Başarılı işlem sonrası yönlendirme
+    else:
+        
+        form = CustomUserCreationForm()
+        print(form.errors)
+    return render(request, 'admin_area/create_user.html', {'form': form})
 @check_company_permission
 def create_custom_user_from_settings(request):
     # Kullanıcı adı ve şifreyi settings.py'den al
@@ -165,36 +206,18 @@ def create_custom_user_from_settings(request):
         messages.error(request, f"Kullanıcı oluşturulurken bir hata oluştu: {str(e)}")
         return HttpResponse(f"Bir hata oluştu: {str(e)}", status=500)
 def master_login(request):
-    """Master kullanıcı girişi için view"""
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-
-        # Master kullanıcıyı kontrol et
-        if username == settings.MASTER_USERNAME and password == settings.MASTER_PASSWORD:
-            # Master kullanıcı doğrulandı
-            master_user, created = CustomUser.objects.get_or_create(username=username)
-            authenticate ()
-            login(request, master_user, backend='inventory_track.backend.CustomUserBackend')
-            return redirect('master_dashboard')  # Master kullanıcıya özel panel
-        else:
-            messages.error(request, "Geçersiz Master kullanıcı bilgileri.")
-            return redirect('master_login')  # Master login sayfasına geri yönlendir
-
-    return render(request, 'master_login.html')
-
-load_dotenv()
-
-def master_login(request):
     if request.method == "POST":
         company_code = request.POST.get("company_code")
         username = request.POST.get("username")
         password = request.POST.get("password")
-
+        print('master_login')
         # Kullanıcıyı doğrula
         user, user_type = authenticate_custom_user(request, company_code, username, password)
-        
+        if user.is_active == False:
+            messages.error(request, "Kullanıcı aktif değil")
+            return redirect('master_login')  # Giriş sayfasına geri yönlendir
         if user:
+            print('User',user)
             # Başarılı giriş durumunda, kullanıcıyı giriş yap
             login(request, user, backend="inventory_track.backends.CustomUserBackend")
             print(request.user.username)

@@ -6,12 +6,15 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .views import get_models,master_dashboard
 urlpatterns = [
+    path('edit_user/<int:user_id>/', views.edit_user, name='edit_user'),  # Master kullanıcı login
     # path('login', views.company_login, name='company_login'),
     path('master_login/', views.master_login, name='master_login'),  # Master kullanıcı login
     path('ldap-login/', views.ldap_login_view, name='ldap_login'),  # LDAP kullanıcı login
     # path('master-dashboard/', views.master_dashboard, name='master_dashboard'),
     path('create-user-from-settings/', views.create_custom_user_from_settings, name='create_user_from_settings'),
     path('create/', views.create_company, name='create_company'),
+    path('list_users/<str:company_code>/', views.list_users, name='list_users'),
+    path('create_user/<str:company_code>',views.create_user,name="create_user"),
     path('company_dashboard/<str:company_code>/', views.company_dashboard, name='company_dashboard'),
     path('sync_ldap_groups_and_users/<int:company_id>', views.get_all_ldap_users_and_groups, name='sync_ldap_groups_and_users'),
     path('master_dashboard/<str:company_code>', master_dashboard, name='master_dashboard'),
@@ -39,7 +42,7 @@ urlpatterns = [
     path('assignments/<str:company_code>', views.assignments, name='assignments'),
     #
     path('companies/',views.companies,name="companies"),
-     path('check_code/<int:code>/', views.check_code, name='check_code'),
+    path('check_code/<int:code>/', views.check_code, name='check_code'),
     path('mail_config/<int:user_id>/<str:company_code>', views.email_update_config, name='email_update_config'),
     path('logout', views.logout_view, name='logout'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
