@@ -1,0 +1,226 @@
+{% extends '_base.html' %}
+{% load static %}
+{% block content %}
+    
+
+    
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinamik Tablo ve Form</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: "Poppins", sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        table {
+            margin-top: 10px;
+            width: 100%;
+            height:10px !important;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding:0px !important;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            font-size: 10px;
+            height: 10px !important;
+        }
+        textarea {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-print {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        @media print {
+            body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0 auto;
+            }
+            .container {
+                padding: 10mm;
+                margin: 0;
+            }
+            table {
+                font-size: 12px;
+            }
+            .btn-print {
+                display: none;
+            }
+            textarea {
+                border: none;
+                resize: none;
+            }
+        }
+    </style>
+    <style>
+        #logo-title {
+            display: flex;
+            align-items: center; /* Yükseklik yönünde ortalamak için */
+            justify-content: space-between; /* Logo sola, yazıyı ortaya yerleştir */
+        }
+        
+        #logo-title .logo {
+            width: 48px;
+            height: 48px; /* Logonun boyutunu ayarlamak için */
+        }
+        
+        #logo-title h4 {
+            flex-grow: 1; /* Yazıyı ortalamak için */
+            text-align: center; /* Yazıyı ortada hizalamak için */
+            margin: 0; /* H4 etiketinin varsayılan margin'lerini kaldırmak için */
+        }
+    
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="logo-title" class="d-flex align-items-center justify-content-between">
+            <img src="{% static 'logo.png' %}" class="logo">
+            <h4 class="text-center m-0">Ekipman Zimmet Tutanağı</h4>
+        </div>
+        <hr>
+        
+        <!-- Firma Bilgileri -->
+        <h6 class="title">Firmanın</h6>
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <style>
+                        .unvan{
+                            width: 100px;
+                        }
+                    </style>
+                    <th class="unvan">Ünvanı</th>
+                    <td>{{ assignments.0.appointed_company }}</td>
+                </tr>
+                <tr>
+                    <th class="unvan">Adresi</th>
+                    <td>{{ assignments.0.appointed_company }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Personel Bilgileri -->
+        <h6 class="title">Personelin</h6>
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <th>Adı Soyadı</th>
+                    <td>{{ assignments.0.assign_to.first_name }} {{ assignments.0.assign_to.last_name }}</td>
+                </tr>
+                <tr>
+                    <th>SSK Sicil No</th>
+                    <td>{{ assignments.0.assign_to.first_name }} {{ assignments.0.assign_to.last_name }}</td>
+                </tr>
+                <tr>
+                    <th>İşe Giriş Tarihi</th>
+                    <td>{{ assignments.0.assign_to.first_name }} {{ assignments.0.assign_to.last_name }}</td>
+                </tr>
+            </tbody>
+        </table>
+<p>Aşağıda tanımı ve özellikleri belirtilen işyerimize ait emtia sağlam ve eksiksiz olarak teslim edilmiştir.</p>
+        <!-- Emtia Listesi -->
+        <h4>Teslim Edilen Emtia</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Sıra No</th>
+                    <th>Cinsi</th>
+                    <th>Birim</th>
+                    <th>Miktar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dinamik Veri -->
+                {% for assignment in assignments %}
+                <tr>
+                    <td>
+                        <strong>
+                        {{ forloop.counter }}
+                    </strong>
+                        </td>
+                    <td>{{ assignment.product.brand }} markalı {{ assignment.product.model }} {{ assignment.product.category.name }} <strong>{{ assignment.product.serial_number }}</strong> seri numaralı</td>
+                    <td>{{ assignment.product.model.unit }}</td>
+                    <td>
+                        {{ assignment.quantity }}
+                    
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+<!-- Teslim Eden ve Teslim Alan -->
+<div class="row mt-4">
+    
+    <div class="col-6 ">
+        <h6>Teslim Alan Personel:</h6>
+        <p><strong>Adı Soyadı</strong></p>
+        <p>İmza:</p>
+    </div>
+    <div class="col-6">
+        <p>Teslim Tarihi : <small> {{ assignments.0.assign_date }}</small> <p>
+        <h6>Teslim Eden Personel:</h6>
+        <p><strong>Adı Soyadı</strong></p>
+        <p>İmza:</p>
+    </div>
+</div>
+
+        <!-- Hasar Durumu -->
+        <p class="text-center">Yukarıda tanımı ve özellikleri belirtilen emtia işyerine;			
+        </p>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+            <label>
+                <input type="radio" name="delivery_status" value="complete"> Hasarsız ve tam olarak teslim edilmiştir.
+            </label>
+            <label>
+                <input type="radio" name="delivery_status" value="damaged"> Hasarlı ya da eksik olarak teslim edilmiştir.
+            </label>
+        </div>
+        <hr>
+        <p>Hasarlı yada Eksik Teslim Alınmış İse Aşağıya Hasarı yada Eksikliği Yazınız				
+        </p>
+<br>
+<br>
+
+
+<!-- Teslim Eden ve Teslim Alan -->
+<div class="row mt-4">
+    <div class="col-6">
+        <h6>Teslim Eden Personel:</h6>
+        <p><strong>Adı Soyadı</strong></p>
+        <p>İmza:</p>
+    </div>
+    <div class="col-6">
+        <p>Teslim Tarihi : <small> {{ assignments.0.assign_date }}</small> <p>
+        <h6>Teslim Alan Personel:</h6>
+        <p><strong>Adı Soyadı</strong></p>
+        <p>İmza:</p>
+    </div>
+</div>
+        
+        <!-- Yazdır Butonu -->
+        <div class="btn-print">
+            <button onclick="window.print()" class="btn btn-primary">
+                Yazdır / PDF İndir
+            </button>
+        </div>
+    </div>
+</body>
+</html>
+{% endblock content %}

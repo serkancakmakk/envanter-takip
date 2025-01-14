@@ -1,0 +1,208 @@
+{% extends '_base.html' %}
+
+{% block content %}
+<style>
+  /* Poppins fontunu ekle */
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+  body {
+      font-family: 'Poppins', sans-serif; /* Poppins fontunu tüm sayfaya uygula */
+  }
+
+  .container {
+      max-width: 600px; /* Formun maksimum genişliğini sınırla */
+      margin: 0 auto; /* Sayfanın ortasına yerleştir */
+      padding: 20px; /* İçerik alanına biraz boşluk ekle */
+  }
+
+  input, button {
+      width: 100%; /* Input ve button'un genişliğini %100 yap */
+      margin-bottom: 10px; /* Her input ve buton arasında boşluk bırak */
+  }
+
+  .form-label {
+      font-size: 1.0rem; /* Etiket font boyutunu küçült */
+  }
+
+  .mb-3 {
+      margin-bottom: 1rem; /* Her bir form öğesi arasındaki boşluğu ayarla */
+  }
+
+  .input-group {
+      display: flex;
+      justify-content: space-between;
+  }
+
+  .input-group .btn {
+      width: 30%; /* Butonun genişliğini %30 yap */
+  }
+
+  .btn-generate {
+    background-color: orange;
+  }
+
+  .btn-generate:hover {
+    background-color: rgb(255, 196, 0);
+  }
+</style>
+
+<div class="container">
+    <h2 class="text-center">Şirket Oluştur</h2>
+    <script>
+      // Sadece sayılardan 6 haneli kod üretme fonksiyonu
+      function generateRandomCode() {
+          // 6 haneli rastgele sayı oluşturma
+          const code = Math.floor(100000 + Math.random() * 900000); // 100000 ile 999999 arasında bir sayı
+          return code;
+      }
+    
+      // Butona tıklama olayını dinleme
+      document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('generate-code-btn').addEventListener('click', function() {
+            // 6 haneli rastgele kod üret
+            const code = generateRandomCode();
+            
+            // Input alanına kodu yaz
+            document.getElementById('code').value = code; // Kodu input'a yaz
+        
+            // AJAX isteği ile kodun veritabanında olup olmadığını kontrol et
+            fetch(`/check_code/${code}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const messageElement = document.getElementById('basic-addon4');
+                    if (messageElement) {  // messageElement'ın null olup olmadığını kontrol et
+                        if (data.exists) {
+                            messageElement.textContent = "Bu kod tanımlı";
+                            messageElement.style.color = "red"; // Uyarı rengini kırmızı yap
+                        } else {
+                            messageElement.textContent = "Bu kod kullanılabilir";
+                            messageElement.style.color = "green"; // Kod kullanılabilir olduğunda yeşil yap
+                        }
+                    } else {
+                        console.warn("basic-addon4 öğesi bulunamadı.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Hata:", error);
+                    alert("Bir hata oluştu.");
+                });
+        });
+    });
+    </script>
+    <form id="company-form" action="{% url 'create_company' %}" method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label" for="code">Şirket Kodu</label>
+          <div class="input-group">
+              <input type="text" class="form-control" name="code" id="code" readonly>
+              <button class="btn btn-generate" type="button" id="generate-code-btn">+</button>
+          </div>
+          {% if form.code.errors %}
+              <div class="text-danger">
+                  {% for error in form.code.errors %}
+                      <p>{{ error }}</p>
+                  {% endfor %}
+              </div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="name">Şirket Adı</label>
+            <input type="text" class="form-control" name="name" id="name">
+            {% if form.name.errors %}
+                <div class="text-danger">
+                    {% for error in form.name.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="owner">Şirket Yetkilisi / Sahibi</label>
+            <input type="text" class="form-control" name="owner" id="owner">
+            {% if form.owner.errors %}
+                <div class="text-danger">
+                    {% for error in form.owner.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="address">Şirket Adresi</label>
+            <input type="text" class="form-control" name="address" id="address">
+            {% if form.address.errors %}
+                <div class="text-danger">
+                    {% for error in form.address.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="phone">Telefon Numarası</label>
+            <input type="text" class="form-control" name="phone" id="phone">
+            {% if form.phone.errors %}
+                <div class="text-danger">
+                    {% for error in form.phone.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="country">Şirket Ülke</label>
+            <input type="text" class="form-control" name="country" id="country">
+            {% if form.country.errors %}
+                <div class="text-danger">
+                    {% for error in form.country.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="city">Şirket Şehir</label>
+            <input type="text" class="form-control" name="city" id="city">
+            {% if form.city.errors %}
+                <div class="text-danger">
+                    {% for error in form.city.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="contract_start_date">Şirket Anlaşma Başlangıç Tarihi</label>
+            <input type="date" class="form-control" name="contract_start_date" id="contract_start_date">
+            {% if form.contract_start_date.errors %}
+                <div class="text-danger">
+                    {% for error in form.contract_start_date.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="contract_end_date">Şirket Anlaşma Bitiş Tarihi</label>
+            <input type="date" class="form-control" name="contract_end_date" id="contract_end_date">
+            {% if form.contract_end_date.errors %}
+                <div class="text-danger">
+                    {% for error in form.contract_end_date.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+    </form>
+</div>
+{% endblock %}

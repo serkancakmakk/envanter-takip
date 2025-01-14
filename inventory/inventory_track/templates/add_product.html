@@ -1,0 +1,151 @@
+{% extends '_base.html' %}
+{% load static %}
+{% block content %}
+{% block title %}
+    <title>Ürün Ekle</title>
+{% endblock title %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+<head>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<style>
+    #request_user {
+        color: green;
+    }
+    .table-container {
+        overflow-x: auto; /* Table for responsive */
+    }
+    .form-label {
+        font-weight: 600;
+    }
+    .btn-custom {
+        font-weight: 500;
+        padding: 10px 20px;
+    }
+</style>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12 col-sm-6">
+
+            <p id="request_user"><i class='bx bxs-user-check'></i> Giriş Yapan Kullanıcı : <p>{{ user.username }}</p>{{request.user.username}} | {{request.user.first_name}} {{request.user.last_name}} </p>
+            
+            <form id="product-form" data-url="{% url 'create_product' company.code %}">
+                {% csrf_token %}
+                
+                <div class="mb-3 col-4">
+                    <label for="product-category" class="form-label">Kategori</label>
+                    <select class="form-select" id="new-category-select" name="category" required>
+                        <option value="">Kategori Seç</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3 col-4">
+                    <label for="product-brand" class="form-label">Marka</label>
+                    <select class="form-select" id="new-brand-select" name="brand" required>
+                        <option value="">Marka Seç</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 col-4">
+                    <label for="product-model" class="form-label">Model</label>
+                    <select class="form-select" id="new-model-select" name="model" required>
+                        <option value="">Model Seç</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 col-4">
+                    <label for="product-serial" class="form-label">Seri Numarası</label>
+                    <input type="text" class="form-control" id="product-serial" name="serial_number" required>
+                </div>
+
+                <div class="mb-3 col-4">
+                    <label for="product-status" class="form-label">Ürün Durumu</label>
+                    <select name="status" class="form-select" aria-label="Default select example">
+                        <option selected>Ürün Durumunu Seçiniz</option>
+                        {% for status in statuses %}
+                            <option value="{{status.id}}">{{status.name}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-success mt-5 btn-custom">Ürünü Kaydet</button>
+            </form>
+
+            <h2 class="mt-5">Mevcut Ürünler</h2>
+            <div class="table-container">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Kategori</th>
+                            <th>Marka</th>
+                            <th>Model</th>
+                            <th>Seri Numarası</th>
+                            <th>Durum</th>
+                            <th>Birim</th>
+                            <th>Kayıt Tarihi</th>
+                            <th>Kayıt Yapan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-table-body">
+                        {% for product in products %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ product.category.name }}</td>
+                                <td>{{ product.brand.name }}</td>
+                                <td>{{ product.model.name }}</td>
+                                <td>{{ product.serial_number }}</td>
+                                <td>{{ product.status }}</td>
+                                <td>{{ product.model.unit }}</td>
+                                <td>{{ product.date_joined }}</td>
+                                <td>{{ product.created_by.first_name }} {{ product.created_by.last_name }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center">Henüz ürün eklenmemiş.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    // companyCode'yi Django template tag'i ile geçir
+    var companyCode = "{{ company.code }}"; 
+</script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/add_product.js' %}"></script>
+<script src="{% static 'js/brand.js' %}"></script>
+
+<script src="{% static 'js/load_model.js' %}"></script>
+{% comment %} <script>
+    function successSwal(message) {
+        Swal.fire({
+            toast: true,
+            animation: true,
+            icon: 'success',
+            title: message,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+        });
+    }
+
+    function errorSwal(message) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Hata',
+            text: message,
+        });
+    }
+
+</script> {% endcomment %}
+{% endblock content %}
