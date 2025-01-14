@@ -880,11 +880,38 @@ def available_products(request, company_code):
     assignments_items = Product.objects.filter(company=company, assign_to__isnull=True)
     print(assignments_items)
     return render(request, 'available_products.html', {'assignments_items': assignments_items})
+def admin_dashboard(request, company_code):
+    from django.db.models import Q
 
-def admin_dashboard(request,company_code):
+    # Tüm ürünler
     products = Product.objects.all()
+    total_products = products.count()  # Toplam ürün sayısı
+
+    # Zimmetlenmemiş ürünler (assign_to alanı boş olanlar)
+    unassigned_products = products.filter(Q(
+        assign_by_content_type__isnull=True,
+            assign_to_content_type__isnull=True,))
+    unassigned_count = unassigned_products.count()  # Zimmetlenmemiş ürün sayısı
+
+    # Yüzde hesaplama (toplam ürün sayısı sıfırsa sıfır olarak ayarla)
+    if total_products > 0:
+        unassigned_percentage = (unassigned_count / total_products) * 100
+    else:
+        unassigned_percentage = 0
+
+    # Kullanıcıları getir
+    if not request.user.company == settings.MASTER_COMPANY:
+        users = LdapUser.objects.all()
+    else:
+        users = CustomUser.objects.all()
+
+    # Context verilerini oluştur
     context = {
-        'products':products,
-        
+        'users': users,
+        'products': products,
+        'total_products': total_products,
+        'unassigned_count': unassigned_count,
+        'unassigned_percentage': round(unassigned_percentage, 2),  # Virgülden sonra 2 basamak
     }
-    return render(request,'admin_area/admin_dashboard.html',context)
+
+    return render(request, 'admin_area/admin_dashboard.html', context)
