@@ -1,7 +1,0 @@
-<form method="POST">
-    {% csrf_token %}
-    <input type="text" name="username" placeholder="Username" />
-    <input type="password" name="password" placeholder="Password" />
-    <input type="hidden" name="backend" value="inventory_track.backends.CustomUserBackend" />
-    <button type="submit">Login</button>
-</form>

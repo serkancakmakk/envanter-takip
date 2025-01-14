@@ -1,8 +1,0 @@
-{% for email in emails %}
-    <div>
-        <h3>{{ email.subject }}</h3>
-        <p><strong>From:</strong> {{ email.sender }}</p>
-        <p><strong>Received at:</strong> {{ email.received_at }}</p>
-        <p>{{ email.body|truncatewords:30 }}</p>
-    </div>
-{% endfor %}
