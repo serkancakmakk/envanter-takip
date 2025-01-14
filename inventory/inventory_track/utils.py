@@ -1,20 +1,20 @@
 import logging
 from django.shortcuts import get_object_or_404
 from ldap3 import Server, Connection, NTLM, ALL
-from inventory_track.models import LdapUser, LdapGroup  # Modellerinizi doğru şekilde ekleyin
+from inventory_track.models import LdapUser   # Modellerinizi doğru şekilde ekleyin
 
 logging.basicConfig(level=logging.DEBUG)
 
 import logging
 from ldap3 import Server, Connection, ALL, NTLM
-from .models import LdapConfig, LdapUser, LdapGroup, Company
+from .models import LdapConfig, LdapUser, Company
 
 # Logging yapılandırması
 logging.basicConfig(level=logging.INFO)
 
 import logging
 from ldap3 import Server, Connection, ALL, NTLM
-from .models import LdapUser, LdapGroup, Company
+from .models import LdapUser, Company
 
 # Logging yapılandırması
 logging.basicConfig(level=logging.INFO)

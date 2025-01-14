@@ -4,9 +4,14 @@
 <div class="container mt-5">
     <div class="row">
         <div class="col-12">
+            <!-- Arama Alanı -->
+            <div class="mb-4">
+                <input type="text" id="searchInput" class="form-control" placeholder="Batch ID ile ara...">
+            </div>
+
             <div class="accordion" id="batchAccordion">
                 {% for batch_id, items in assignments.items %}
-                <div class="accordion-item">
+                <div class="accordion-item" data-batch-id="{{ batch_id }}">
                     <h2 class="accordion-header" id="heading{{ forloop.counter }}">
                         <button
                             class="accordion-button {% if not forloop.first %}collapsed{% endif %}"
@@ -55,4 +60,23 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Arama işlevi
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        let searchTerm = e.target.value.toLowerCase();
+        let accordionItems = document.querySelectorAll('.accordion-item');
+        
+        accordionItems.forEach(item => {
+            let batchId = item.getAttribute('data-batch-id').toLowerCase();
+            
+            if (batchId.includes(searchTerm)) {
+                item.style.display = ''; // Item'ı göster
+            } else {
+                item.style.display = 'none'; // Item'ı gizle
+            }
+        });
+    });
+</script>
+
 {% endblock content %}

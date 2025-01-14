@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 
 from .backends import LDAPBackend
 from .services import authenticate_custom_user, authenticate_user
-from .models import AssetAssignment, Brand, Category, CustomUser, UserMail, LdapConfig, LdapUser, Company, Model, Product, ProductStatus
-from .models import Company, LdapUser,LdapGroup  # LdapUser modelinizi doğru şekilde içe aktarın
+from .models import AssetAssignment, Brand, Category, CustomUser,  LdapConfig, LdapUser, Company, Model, Product, ProductStatus
+from .models import Company, LdapUser  # LdapUser modelinizi doğru şekilde içe aktarın
 from ldap3 import Server, Connection, ALL, NTLM
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -508,16 +508,25 @@ def assignments(request, company_code):
     }
     return render(request, 'assignments.html', context)
 from django.http import Http404
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.http import Http404
+from datetime import datetime
+import uuid
+from .models import Company, Product, LdapUser, CustomUser, Category, AssetAssignment
 
 def asset_assignment_view(request, company_code):
+    # Şirketi alıyoruz
     company = get_object_or_404(Company, code=company_code)
+    
+    # Kullanıcıları alıyoruz
     ldap_users = LdapUser.objects.filter(company=company)
     custom_users = CustomUser.objects.filter(company=company)
-
-    # Ortak bir formatta sonuçları birleştirmek
+    
+    # Ortak formatta kullanıcıları birleştiriyoruz
     employees = []
-
-    # LdapUser'lardan gelenleri eklemek
     for ldap_user in ldap_users:
         employees.append({
             'id': ldap_user.id,
@@ -525,8 +534,6 @@ def asset_assignment_view(request, company_code):
             'company': ldap_user.company,
             'email': ldap_user.email,
         })
-
-    # Custom User'lardan gelenleri eklemek
     for custom_user in custom_users:
         employees.append({
             'id': custom_user.id,
@@ -534,17 +541,25 @@ def asset_assignment_view(request, company_code):
             'company': custom_user.company,
             'email': custom_user.email,
         })
-
+    
+    # Kategorileri alıyoruz
     categories = Category.objects.filter(company=company)
 
-    today = date.today()
-    products = Product.objects.filter(company=company, assign_to__isnull=True).select_related('category', 'brand', 'model')
+    # Bugünün tarihini alıyoruz
+    today = datetime.today().date()
+
+    # Atanmamış ürünleri alıyoruz
+    products = Product.objects.filter(
+        company=company,
+        assign_by_content_type__isnull=True,
+        assign_to_content_type__isnull=True
+    ).select_related('category', 'brand', 'model')
 
     if request.method == 'POST':
         selected_products = request.POST.get('selected_product_ids')
         if selected_products:
             selected_products = selected_products.split(',')  # Virgülle ayrılmış id'leri listeye çevir
-
+        
         assign_to = request.POST.get('assign_to')
         info = request.POST.get('info')
         assign_date = request.POST.get('assign_date')
@@ -552,70 +567,86 @@ def asset_assignment_view(request, company_code):
         appointed_company = request.POST.get('appointed_company')
         appointed_address = request.POST.get('appointed_address')
 
-        # Handle empty or invalid date inputs
+        # Tarihlerin doğru formatta olduğundan emin olalım
         try:
             if assign_date:
-                if len(assign_date) > 10:  # Assuming it includes time
+                if len(assign_date) > 10:  # Tarih saat içeriyorsa
                     assign_date = datetime.strptime(assign_date, '%Y-%m-%d %H:%M')
                 else:
                     assign_date = datetime.strptime(assign_date, '%Y-%m-%d')
 
             if return_date:
-                if len(return_date) > 10:  # Assuming it includes time
+                if len(return_date) > 10:  # Tarih saat içeriyorsa
                     return_date = datetime.strptime(return_date, '%Y-%m-%d %H:%M')
-                elif return_date != '':  # Only parse if it's provided
+                elif return_date != '':  # Sadece verildiyse
                     return_date = datetime.strptime(return_date, '%Y-%m-%d')
                 else:
-                    return_date = None  # If no return date is provided, set it as None
+                    return_date = None  # Geri iade tarihi yoksa None
+
         except ValueError:
             messages.error(request, "Geçersiz tarih formatı.")
             return redirect('asset_assignment_view', company_code=company_code)
 
-        # Proceed if no missing required fields
+        # Zimmetleme için gerekli alanların dolu olduğundan emin olalım
         if not selected_products or not assign_to:
             messages.error(request, "Lütfen ürünleri ve bir kullanıcı seçin.")
             return redirect('asset_assignment_view', company_code=company_code)
 
-        # Try to get the user from LdapUser or CustomUser
+        # Kullanıcıyı almak için LdapUser veya CustomUser'ı kontrol edelim
         try:
-            # First try to get from LdapUser
             recipient = LdapUser.objects.get(id=assign_to, company=company)
+            recipient_content_type = ContentType.objects.get_for_model(LdapUser)
         except LdapUser.DoesNotExist:
             try:
-                # If not found, try to get from CustomUser
                 recipient = CustomUser.objects.get(id=assign_to, company=company)
+                recipient_content_type = ContentType.objects.get_for_model(CustomUser)
             except CustomUser.DoesNotExist:
                 raise Http404("Kullanıcı bulunamadı.")
 
-        # Batch ID'yi oluştur
-        batch_user = recipient  # 'recipient' artık doğru kullanıcıyı tutuyor
+        # Batch ID'yi oluşturuyoruz
+        batch_user = recipient  # 'recipient' doğru kullanıcıyı tutuyor
         batch_id = f"{batch_user.first_name}_{batch_user.last_name}_{assign_date}_{uuid.uuid4()}"
-        
+
         # Şirket kontrolü
         if request.user.company.code != recipient.company.code:
             messages.error(request, "Hatalı işlem yapıldı lütfen kendi şirketinizden birini seçin")
             return redirect('asset_assignment_view', company_code=company_code)
 
-        # Seçilen ürünleri zimmetle
+        # Ürünleri zimmetliyoruz
         for product_id in selected_products:
             product = get_object_or_404(Product, id=product_id, company=company)
+            print(product)
+            product.assign_to_content_type = recipient_content_type
+            print(product.assign_to_content_type)
+            product.assign_to_object_id = recipient.id
+            print(product.assign_to_object_id)
+            product.save()
+            # AssetAssignment kaydını oluşturuyoruz
+            assign_by_content_type = ContentType.objects.get_for_model(request.user.__class__)
+            print(assign_by_content_type)
+            assign_to_content_type = ContentType.objects.get_for_model(recipient.__class__)
+            print(assign_to_content_type)
 
-            # AssetAssignment kaydını oluştur ve batch_id'yi ata
+            # Create the AssetAssignment instance
             asset_assignment = AssetAssignment.objects.create(
                 company=company,
                 product=product,
-                assign_by=request.user,
-                assign_to=recipient,
+                assign_by_content_type=assign_by_content_type,  # ContentType for the assign_by user
+                assign_by_object_id=request.user.id,  # ID of the assigning user
+                assign_to_content_type=assign_to_content_type,  # ContentType for the assign_to user
+                assign_to_object_id=recipient.id,  # ID of the assigned user
                 info=info,
                 assign_date=assign_date,
                 return_status=None,
                 appointed_company=appointed_company,
                 appointed_address=appointed_address,
-                batch_id=batch_id,  # Aynı grupta olan ürünler için aynı batch_id
+                batch_id=batch_id,  # Same batch_id used
                 is_active=True,
             )
-            asset_assignment.save()
 
+            # Save the instance (although save() is redundant when using .create())
+            asset_assignment.save()
+        
         messages.success(request, "Ürünler başarıyla zimmetlendi.")
         return redirect('asset_assignment_view', company_code=company_code)
 
