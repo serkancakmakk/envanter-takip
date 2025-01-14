@@ -95,6 +95,8 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'inventory_track.context_processors.master_company',  # Bu satırı ekledik
+
                 'inventory_track.context_processors.add_user_permissions',
                  'inventory_track.context_processors.company_code',
                 'django.template.context_processors.debug',

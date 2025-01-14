@@ -33,7 +33,7 @@
             
             <form id="product-form" data-url="{% url 'create_product' company.code %}">
                 {% csrf_token %}
-                
+                <input type="hidden" value="{{company_code}}" id="company-code">
                 <div class="mb-3 col-4">
                     <label for="product-category" class="form-label">Kategori</label>
                     <select class="form-select" id="new-category-select" name="category" required>
@@ -120,12 +120,18 @@
     // companyCode'yi Django template tag'i ile geçir
     var companyCode = "{{ company.code }}"; 
 </script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="{% static 'js/add_product.js' %}"></script>
-<script src="{% static 'js/brand.js' %}"></script>
 
-<script src="{% static 'js/load_model.js' %}"></script>
-{% comment %} <script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/model.js' %}"></script>
+<script src="{% static 'js/status.js' %}"></script>  <!-- Öncelikli JS dosyası -->
+<script src="{% static 'js/brand.js' %}"></script>  <!-- Öncelikli JS dosyası -->
+<script src="{% static 'js/load_model.js' %}"></script>  <!-- loadCategories fonksiyonunu burada tanımlayın -->
+<script src="{% static 'js/add_product.js' %}"></script>
+<script src="{% static 'js/category.js' %}"></script>  
+<script src="{% static 'js/add_category.js' %}"></script>  <!-- Kategoriyi ekleyin -->
+<script src="{% static 'js/add_brand.js' %}"></script>  <!-- Kategoriyi ekleyin -->
+<script src="{% static 'js/load_model.js' %}"></script> 
+<script>
     function successSwal(message) {
         Swal.fire({
             toast: true,
@@ -147,5 +153,5 @@
         });
     }
 
-</script> {% endcomment %}
+</script>
 {% endblock content %}

@@ -373,14 +373,16 @@ from django.views.decorators.csrf import csrf_exempt
 def create_product(request, company_code):
     company = get_object_or_404(Company, code=company_code)
     print('product ekleme viewsina geldi')
+    
     if request.method == 'POST':
         category_id = request.POST.get('category')
         brand_id = request.POST.get('brand')
         model_id = request.POST.get('model')
         serial_number = request.POST.get('serial_number')
         status = request.POST.get('status')
-        product_status = get_object_or_404(ProductStatus,id=status)
-        print(product_status.id)
+        product_status = get_object_or_404(ProductStatus, id=status)
+        print(f"Product status ID: {product_status.id}")
+        
         # Aynı seri numarasından ürün var mı kontrol et
         if Product.objects.filter(serial_number=serial_number, company=company).exists():
             return JsonResponse({'success': False, 'error': f"Bu '{serial_number}' seri numaralı ürün zaten kayıtlı."})
@@ -399,7 +401,7 @@ def create_product(request, company_code):
                 serial_number=serial_number,
                 company=company,
                 created_by=request.user,
-                status = product_status,
+                status=product_status,
             )
 
             # Return JSON response with the new product data
@@ -416,9 +418,14 @@ def create_product(request, company_code):
                     'created_by': f"{product.created_by.first_name} {product.created_by.last_name}"
                 }
             })
+        
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            # Hata mesajını konsola yazdır
+            print(f"Error creating product: {str(e)}")
+            return JsonResponse({'success': False, 'error': f"Bir hata oluştu: {str(e)}"})
+
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 
 
 from datetime import date       
@@ -500,9 +507,34 @@ def assignments(request, company_code):
         'assignments': grouped_assignments,  # Şablona gruplanmış veri gönder
     }
     return render(request, 'assignments.html', context)
+from django.http import Http404
+
 def asset_assignment_view(request, company_code):
     company = get_object_or_404(Company, code=company_code)
-    employees = LdapUser.objects.filter(company=company)
+    ldap_users = LdapUser.objects.filter(company=company)
+    custom_users = CustomUser.objects.filter(company=company)
+
+    # Ortak bir formatta sonuçları birleştirmek
+    employees = []
+
+    # LdapUser'lardan gelenleri eklemek
+    for ldap_user in ldap_users:
+        employees.append({
+            'id': ldap_user.id,
+            'name': ldap_user.first_name,
+            'company': ldap_user.company,
+            'email': ldap_user.email,
+        })
+
+    # Custom User'lardan gelenleri eklemek
+    for custom_user in custom_users:
+        employees.append({
+            'id': custom_user.id,
+            'name': custom_user.first_name,
+            'company': custom_user.company,
+            'email': custom_user.email,
+        })
+
     categories = Category.objects.filter(company=company)
 
     today = date.today()
@@ -519,6 +551,7 @@ def asset_assignment_view(request, company_code):
         return_date = request.POST.get('return_date')
         appointed_company = request.POST.get('appointed_company')
         appointed_address = request.POST.get('appointed_address')
+
         # Handle empty or invalid date inputs
         try:
             if assign_date:
@@ -543,34 +576,46 @@ def asset_assignment_view(request, company_code):
             messages.error(request, "Lütfen ürünleri ve bir kullanıcı seçin.")
             return redirect('asset_assignment_view', company_code=company_code)
 
-        recipient = get_object_or_404(LdapUser, id=assign_to)
+        # Try to get the user from LdapUser or CustomUser
+        try:
+            # First try to get from LdapUser
+            recipient = LdapUser.objects.get(id=assign_to, company=company)
+        except LdapUser.DoesNotExist:
+            try:
+                # If not found, try to get from CustomUser
+                recipient = CustomUser.objects.get(id=assign_to, company=company)
+            except CustomUser.DoesNotExist:
+                raise Http404("Kullanıcı bulunamadı.")
 
         # Batch ID'yi oluştur
-        batch_user = get_object_or_404(LdapUser,id=assign_to)
+        batch_user = recipient  # 'recipient' artık doğru kullanıcıyı tutuyor
         batch_id = f"{batch_user.first_name}_{batch_user.last_name}_{assign_date}_{uuid.uuid4()}"
+        
+        # Şirket kontrolü
         if request.user.company.code != recipient.company.code:
-            print(recipient.company.code)
             messages.error(request, "Hatalı işlem yapıldı lütfen kendi şirketinizden birini seçin")
             return redirect('asset_assignment_view', company_code=company_code)
+
         # Seçilen ürünleri zimmetle
         for product_id in selected_products:
             product = get_object_or_404(Product, id=product_id, company=company)
 
             # AssetAssignment kaydını oluştur ve batch_id'yi ata
             asset_assignment = AssetAssignment.objects.create(
-                company = company,
+                company=company,
                 product=product,
                 assign_by=request.user,
                 assign_to=recipient,
                 info=info,
                 assign_date=assign_date,
                 return_status=None,
-                appointed_company = appointed_company,
-                appointed_address = appointed_address,
+                appointed_company=appointed_company,
+                appointed_address=appointed_address,
                 batch_id=batch_id,  # Aynı grupta olan ürünler için aynı batch_id
                 is_active=True,
             )
             asset_assignment.save()
+
         messages.success(request, "Ürünler başarıyla zimmetlendi.")
         return redirect('asset_assignment_view', company_code=company_code)
 
@@ -804,3 +849,11 @@ def available_products(request, company_code):
     assignments_items = Product.objects.filter(company=company, assign_to__isnull=True)
     print(assignments_items)
     return render(request, 'available_products.html', {'assignments_items': assignments_items})
+
+def admin_dashboard(request,company_code):
+    products = Product.objects.all()
+    context = {
+        'products':products,
+        
+    }
+    return render(request,'admin_area/admin_dashboard.html',context)

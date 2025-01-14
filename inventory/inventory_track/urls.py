@@ -7,6 +7,7 @@ from django.conf.urls.static import static
 from .views import get_models,master_dashboard
 urlpatterns = [
     path('edit_user/<int:user_id>/', views.edit_user, name='edit_user'),  # Master kullanıcı login
+    path('admin_dashboard/<str:company_code>/', views.admin_dashboard, name='admin_dashboard'),  # Master kullanıcı login
     # path('login', views.company_login, name='company_login'),
     path('master_login/', views.master_login, name='master_login'),  # Master kullanıcı login
     path('ldap-login/', views.ldap_login_view, name='ldap_login'),  # LDAP kullanıcı login

@@ -254,13 +254,22 @@ class Product(BaseModel):
     def __str__(self):
         return f"{self.category} - {self.brand} - {self.model}"
 
+
 class AssetAssignment(models.Model):
     company = models.ForeignKey('Company', on_delete=models.CASCADE)  # Ürün ile ilişki
-    appointed_company = models.CharField(max_length=255,null=True,blank=True)
-    appointed_address = models.CharField(max_length=255,null=True,blank=True)
+    appointed_company = models.CharField(max_length=255, null=True, blank=True)
+    appointed_address = models.CharField(max_length=255, null=True, blank=True)
     product = models.ForeignKey('Product', on_delete=models.CASCADE)  # Ürün ile ilişki
-    assign_by = models.ForeignKey('LdapUser', related_name='assigned_by', on_delete=models.SET_NULL, null=True)  # Atayan kişi
-    assign_to = models.ForeignKey('LdapUser', related_name='assigned_to', on_delete=models.SET_NULL, null=True)  # Atanan kişi
+
+    # Kullanıcıların GenericForeignKey ile atanması
+    assign_by_content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True, related_name="assign_by")
+    assign_by_object_id = models.PositiveIntegerField(null=True, blank=True)
+    assign_by = GenericForeignKey('assign_by_content_type', 'assign_by_object_id')  # Atayan kişi
+
+    assign_to_content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True, related_name="assign_to")
+    assign_to_object_id = models.PositiveIntegerField(null=True, blank=True)
+    assign_to = GenericForeignKey('assign_to_content_type', 'assign_to_object_id')  # Atanan kişi
+
     info = models.TextField(blank=True, null=True)  # Ekstra bilgi
     assign_date = models.DateTimeField(auto_now_add=True)  # Atama tarihi
     assign_status = models.CharField(max_length=50, default='active')  # Atama durumu (ör. 'active', 'inactive', 'returned' vb.)
@@ -270,5 +279,6 @@ class AssetAssignment(models.Model):
     return_date = models.DateTimeField(null=True, blank=True)  # Geri iade tarihi (isteğe bağlı)
     return_status = models.CharField(max_length=50, null=True, blank=True)  # Geri iade durumu (isteğe bağlı)
     batch_id = models.CharField(max_length=255, null=True, blank=True)
+
     def __str__(self):
         return f"{self.product} assigned to {self.assign_to} by {self.assign_by}"

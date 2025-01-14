@@ -8,31 +8,32 @@ from rest_framework.exceptions import NotFound
 # Create your views here.
 from rest_framework.permissions import IsAuthenticated
 class GetModelsAPI(APIView):
-    # permission_classes = [IsAuthenticated]  # Kimlik doğrulaması zorunlu
     def get(self, request, company_code):
-        brand_id = request.GET.get('brand_id')
-        company = get_object_or_404(Company, code=company_code)
-        # if not request.user.is_authenticated or request.user.company.code != company.code:
-        #     return Response({'error': 'Yetkiniz yok.'}, status=403)
-        if not brand_id:
-            return Response({'error': 'Marka ID\'si gereklidir.'}, status=400)
-        print('GET MODELS APİ GELDİ')
-        # Markayı al
-        brand = get_object_or_404(Brand, id=brand_id, company=company)
+        try:
+            brand_id = request.GET.get('brand_id')
+            company = get_object_or_404(Company, code=company_code)
+            print('Get models apiye geldi')
+            if not brand_id:
+                return Response({'error': 'Marka ID\'si gereklidir.'}, status=400)
+            
+            brand = get_object_or_404(Brand, id=brand_id, company=company)
 
-        # İlgili marka ile ilişkili modelleri al
-        models = Model.objects.filter(brand=brand, brand__company=company)
-        
-        if not models.exists():
-            return Response({'info': 'Belirtilen marka için model bulunamadı.'}, status=404)
+            models = Model.objects.filter(brand=brand, brand__company=company)
+            
+            if not models.exists():
+                return Response({'info': 'Belirtilen marka için model bulunamadı.'}, status=404)
 
-        # Modellerin verisini hazırlayıp JSON formatında döndür
-        models_data = [
-            {'id': model.id, 'name': model.name, 'brand_name': model.brand.name, 'category_name': model.brand.category.name}
-            for model in models
-        ]
-        print(models_data)
-        return Response({'models': models_data})
+            models_data = [
+                {'id': model.id, 'name': model.name, 'brand_name': model.brand.name, 'category_name': model.brand.category.name}
+                for model in models
+            ]
+            print('Models_DAta',models_data)
+            return Response({'models': models_data})
+        except Exception as e:
+            print(f"Error: {str(e)}")  # Hata mesajını konsola yazdır
+            return Response({'error': 'Sunucu hatası. Lütfen tekrar deneyin.'}, status=500)
+
+
 class GetBrandsAPI(APIView):
 
     def get(self, request, company_code):
@@ -207,11 +208,14 @@ class GetProductsAPI(APIView):
         products_data = [
             {
                 'id': product.id,
-                'name': f"{product.category.name} - {product.brand.name} - {product.model.name} - {product.serial_number}",
+                'name': f"{product.category.name} - {product.brand.name} - {product.model.name}",
+                'serial_number': product.serial_number
             }
+            
             for product in products
+                
         ]
-
+        
         return Response({
             'results': products_data,
             'has_next': end < total_count  # Daha fazla sayfa olup olmadığını belirtir

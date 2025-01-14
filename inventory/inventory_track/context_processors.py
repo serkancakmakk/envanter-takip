@@ -21,3 +21,13 @@ def company_code(request):
             # Eğer 'company' özelliği mevcut değilse, company_code'yu None bırakıyoruz
             company_code = None
     return {'company_code': company_code}
+import os
+from dotenv import load_dotenv
+
+# .env dosyasını yükle
+load_dotenv()
+
+def master_company(request):
+    return {
+        'MASTER_COMPANY': os.getenv('MASTER_COMPANY')
+    }

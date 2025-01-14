@@ -19,7 +19,7 @@
         </button>
         
       </li>
-      <small class="version">version 1.0801</small>
+      <small class="version">version 1.1401</small>
       <style>
         .version{
           font-weight: bold;
@@ -31,10 +31,16 @@
             <i class='bx bxs-user' style="font-size: 24px;"></i>
             <span>{{request.user.username}}</span>
         </a>
+        <li class="{% active_class 'admin_dashboard' %}">
+          <a href="{% url 'admin_dashboard' company_code %}">
+            <i class="fa-solid fa-user"></i>
+            <span>Yönetici Paneli</span>
+          </a>
+        </li>
       <li class="{% active_class 'company_dashboard' %}">
         <a href="{% url 'company_dashboard' company_code %}">
-          <i class='bx bx-home'></i>
-          <span>Home</span>
+          <i class="fa-solid fa-gear"></i>
+          <span>Ayarlar</span>
         </a>
       </li>
       <li class="{% active_class 'inventory' %}">
@@ -76,7 +82,11 @@
             <li><a href="{% url 'product_page' company_code %}">Ürün</a></li>
             <li><a href="{% url 'manage_entities' company_code %}">Kategori / Marka / Model</a></li>
             {% comment %} <li><a href="{% url 'email_update_config' request.user.id company.code %}">Mail Ayarları</a></li> {% endcomment %}
+            
+            {% if request.user.company.code == MASTER_COMPANY %}
             <li><a href="{% url 'create_user' company_code %}">Kullanıcı</a></li>
+            {% endif %}
+
             <li><a href="#">Departman</a></li>
             <li><a href="#">Ürün</a></li>
           </div>
