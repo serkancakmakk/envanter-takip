@@ -149,36 +149,65 @@
                     <div class="card">
                         <div class="card-header"><h5>Zimmet Aksiyonları</h5></div>
                         <div class="card-body">
-                            <table class="table table-hover">
+                            <table class="table table-hover text-center">
                                 <thead>
                                     <tr>
+                                        <th>Form</th>
                                         <th>Ürün</th>
-                                        <th>Birim</th>
-                                        <th>Seri Numarası</th>
+                                        <th>Atayan Kişi</th>
+                                        <th>Atanan Kişi</th>
                                         <th>Durum</th>
+                                        <th>Atama Tarihi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    
-                                    {% for product in products  %}
-                                        
-                                    
-                                        
+                                    {% for asset in assignments %}
                                     <tr>
-                                        <td>
-                                            {{product.brand}} marka {{product.model}} model {{product.category}}</td>
-                                        <td>{{product.model.unit}}</td>
-                                        <td>{{product.serial_number}}</td>
-                                        <td>{{product.status}}</td>
+                                        <!-- Ürün Bilgisi -->
+                                        <style>
+                                            #batch_icon {
+                                                text-decoration: none;
+                                                color: #FFAF00;
+                                                transition: transform 0.3s ease, color 0.3s ease; /* Animasyon için transition ekledik */
+                                            }
+                                            #batch_icon:hover {
+                                                transform: scale(1.2); /* Doğru kullanım */
+                                                color: #FFA500; /* İsteğe bağlı, renk değişimi */
+                                            }
+                                        </style>
+                                        <td><a id="batch_icon" href="{% url 'asset_assignment_form' asset.batch_id %}" class='bx bx-package'></i></td>
+                                        <td>{{ asset.product }}</td>
                                         
+                                        <!-- Atayan Kişi -->
+                                        <td>
+                                            {% if asset.assign_by %}
+                                            {{ asset.assign_by }}
+                                             <i class='bx bx-right-arrow-alt'></i>
+                                            {% else %}
+                                            Belirtilmemiş
+                                            {% endif %}
+                                        </td>
+                                        
+                                        <!-- Atanan Kişi -->
+                                        <td>
+                                            {% if asset.assign_to %}
+                                            {{ asset.assign_to }}
+                                            {% else %}
+                                            Belirtilmemiş
+                                            {% endif %}
+                                        </td>
+                                        
+                                        <!-- Durum -->
+                                        <td>
+                                            {{ asset.assign_status }}
+                                        </td>
+                                        
+                                        <!-- Atama Tarihi -->
+                                        <td>
+                                            {{ asset.assign_date|date:"d.m.Y H:i" }}
+                                        </td>
                                     </tr>
                                     {% endfor %}
-                                    <tr>
-                                        <td>Product 2</td>
-                                        <td>80</td>
-                                        <td>Category B</td>
-                                        <td>$15.00</td>
-                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -224,15 +253,33 @@
                     </div>
                 </div>
         </div>
-        <div class="col-lg-4 float-end">
-        <div class="card">
-            <div class="card-body text-center">
-                <h5 class="card-title">Zimmetlenmemiş Ürünler</h5>
-                <canvas id="unassignedDoughnutChart" width="200" height="200"></canvas>
-                <p class="mt-3">Toplam: {{ total_products }} ürün</p>
+        <div class="row">
+            <!-- Sol tarafa yaslanacak sütun -->
+            <div class="col-lg-4 mt-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Sola Yaslanan Kart</h5>
+                        <canvas id="unassignedDoughnutChart1" width="200" height="200"></canvas>
+                        <p class="mt-3">Açıklama metni burada...</p>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Sağa yaslanacak sütun -->
+            <div class="col-lg-4 mt-4 ms-auto">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Sağa Yaslanan Kart</h5>
+                        <canvas id="unassignedDoughnutChart" width="100" height="100"></canvas>
+                        <p class="mt-3">Toplam: {{ total_products }} ürün</p>
+                    </div>
+                </div>
             </div>
         </div>
+        
+        
     </div>
+    
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 // Django'dan gelen yüzdelik veriyi alın

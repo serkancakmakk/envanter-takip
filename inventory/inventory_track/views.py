@@ -880,38 +880,37 @@ def available_products(request, company_code):
     assignments_items = Product.objects.filter(company=company, assign_to__isnull=True)
     print(assignments_items)
     return render(request, 'available_products.html', {'assignments_items': assignments_items})
+from django.db.models import Q
+@login_required
 def admin_dashboard(request, company_code):
-    from django.db.models import Q
+    # Kullanıcının şirketine ait ürünleri al
+    products = Product.objects.filter(company=request.user.company)
+    total_products = products.count()
+    company = get_company(company_code)
+    # Zimmetlenmemiş ürünleri filtrele
+    unassigned_products = products.filter(
+        Q(assign_by_content_type__isnull=True, assign_to_content_type__isnull=True)
+    )
+    unassigned_count = unassigned_products.count()
 
-    # Tüm ürünler
-    products = Product.objects.all()
-    total_products = products.count()  # Toplam ürün sayısı
-
-    # Zimmetlenmemiş ürünler (assign_to alanı boş olanlar)
-    unassigned_products = products.filter(Q(
-        assign_by_content_type__isnull=True,
-            assign_to_content_type__isnull=True,))
-    unassigned_count = unassigned_products.count()  # Zimmetlenmemiş ürün sayısı
-
-    # Yüzde hesaplama (toplam ürün sayısı sıfırsa sıfır olarak ayarla)
-    if total_products > 0:
-        unassigned_percentage = (unassigned_count / total_products) * 100
-    else:
-        unassigned_percentage = 0
-
-    # Kullanıcıları getir
-    if not request.user.company == settings.MASTER_COMPANY:
-        users = LdapUser.objects.all()
+    # Yüzde hesaplama
+    unassigned_percentage = (unassigned_count / total_products) * 100 if total_products > 0 else 0
+    assignments = AssetAssignment.objects.select_related('product', 'assign_to_content_type', 'assign_by_content_type').filter(company = company).order_by('-created_at')[:5]
+    print(assignments)
+    # Kullanıcının şirketine göre kullanıcıları al
+    if request.user.company.code != settings.MASTER_COMPANY:
+        users = LdapUser.objects.filter(company=request.user.company)
     else:
         users = CustomUser.objects.all()
 
-    # Context verilerini oluştur
+    # Context verileri
     context = {
-        'users': users,
-        'products': products,
+        'assignments':assignments,
+        'products':products,
         'total_products': total_products,
         'unassigned_count': unassigned_count,
-        'unassigned_percentage': round(unassigned_percentage, 2),  # Virgülden sonra 2 basamak
+        'users':users,
+        'unassigned_percentage': round(unassigned_percentage, 2),
+        'user_count': users.count(),
     }
-
     return render(request, 'admin_area/admin_dashboard.html', context)
