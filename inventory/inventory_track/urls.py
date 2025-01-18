@@ -46,4 +46,9 @@ urlpatterns = [
     path('check_code/<int:code>/', views.check_code, name='check_code'),
     path('mail_config/<int:user_id>/<str:company_code>', views.email_update_config, name='email_update_config'),
     path('logout', views.logout_view, name='logout'),
+    path("create-user/", views.create_user_view, name="create_user_view"),
+    #
+    # report
+    # 
+    path("user_based_asset/<str:company_code>", views.user_based_asset, name="user_based_asset"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -1,0 +1,89 @@
+{% extends '_base.html' %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Varlık Atama Raporu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Varlık Atama Raporu</h2>
+        
+        <!-- Buton Ekle -->
+
+            <button type="button" id="fetch-assets" class="btn btn-primary">Verileri Getir</button>
+
+        <table class="table table-bordered" id="asset-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Ürün</th>
+                    <th>Kategori</th>
+                    <th>Atayan Kişi</th>
+                    <th>Atanan Kişi</th>
+                    <th>Atama Tarihi</th>
+                    <th>Durum</th>
+                    <th>Geri İade Tarihi</th>
+                    <th>Geri İade Durumu</th>
+                    <th>Ekstra Bilgi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Burada AJAX verisi ile satırlar eklenecek -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $('#fetch-assets').on('click', function () {
+                companyCode = "2",
+                userId = 6,
+                $.ajax({
+                    url:`/api/get_assign_product/${companyCode}/${userId}/`,
+                    method: 'GET',
+                    success: function (data) {
+                        console.log(data); // Gelen yanıtı kontrol et
+                        $('#asset-table tbody').empty();
+        
+                        if (Array.isArray(data)) {
+                            data.forEach(function (assignment) {
+                                const row = `
+                                    <tr>
+                                        <td>${assignment.id}</td>
+                                        <td>${assignment.product__category}</td>
+                                        <td>${assignment.product_category}</td>
+                                        <td>${assignment.assign_by}</td>
+                                        <td>${assignment.assign_to}</td>
+                                        <td>${assignment.assign_date}</td>
+                                        <td>${assignment.assign_status}</td>
+                                        <td>${assignment.return_date || 'Henüz iade edilmedi'}</td>
+                                        <td>${assignment.return_status || 'Henüz iade edilmedi'}</td>
+                                        <td>${assignment.info || 'Bilgi yok'}</td>
+                                    </tr>
+                                `;
+                                $('#asset-table tbody').append(row);
+                            });
+                        } else {
+                            console.error('Gelen veri bir dizi değil:', data);
+                        }
+                    },
+                    error: function (error) {
+                        console.error('AJAX Hatası:', error);
+                    }
+                });
+            });
+        });
+        
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+{% endblock content %}

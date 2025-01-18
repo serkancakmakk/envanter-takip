@@ -1,10 +1,12 @@
 {% extends '_base.html' %} 
-
+{% load static %}
 {% block content %}
-
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'icon/users.png' %}">
+{% endblock icon %}
     
     {% block title %}
-      <title>Destek Kullanıcı Listesi</title>
+      <title>{{company.name}} Kullanıcı Listesi</title>
     {% endblock title %}
     <!-- Bootstrap CSS Bağlantısı -->
     <style>
@@ -56,7 +58,7 @@
     </style>
   <body>
     <div class="container mt-5">
-      <h2 class="mb-4">Destek Kullanıcı Listesi</h2>
+      <h2 class="mb-4">{{company.name}} Kullanıcı Listesi</h2>
       <!-- Tablo Başlangıcı -->
       <div class="table-responsive">
         <table class="table table-bordered table-striped table-rounded">

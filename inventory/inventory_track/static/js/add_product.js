@@ -13,18 +13,15 @@ $(document).ready(function () {
                     var product = response.product;
                     var newRow = `
                         <tr>
-                            <td>${product.id}</td>
-                            <td>${product.category}</td>
-                            <td>${product.brand}</td>
-                            <td>${product.model}</td>
+                            <td>${product.brand} marka ${product.model} model ${product.category}</td>
+                            
+                            <td>${product.unit}</td>
                             <td>${product.serial_number}</td>
                             <td>${product.status}</td>
-                            <td>${product.date_joined}</td>
-                            <td>${product.created_by}</td>
                         </tr>
                     `;
                     $("#product-table-body").append(newRow);
-
+                    console.log(product.model.unit)
                     // Formu sıfırla
                     $("#product-form")[0].reset();
 

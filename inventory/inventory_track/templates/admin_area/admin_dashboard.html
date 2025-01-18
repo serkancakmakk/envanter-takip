@@ -1,6 +1,11 @@
 {% extends '_base.html' %}
-
+{% load static %}
 {% block content %}
+
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'icon/dashboard.png' %}">
+{% endblock icon %}
+    
 <!DOCTYPE html>
 <html lang="en">
 <head>

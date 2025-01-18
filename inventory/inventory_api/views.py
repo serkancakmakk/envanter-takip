@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, render
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from inventory_track.mixins import get_company
-from inventory_track.models import Brand, Category, Company, Model, Product, ProductStatus
+from inventory_track.models import AssetAssignment, Brand, Category, Company, LdapUser, Model, Product, ProductStatus
 from rest_framework.exceptions import NotFound
 # Create your views here.
 from rest_framework.permissions import IsAuthenticated
@@ -167,7 +167,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from inventory_track.models import Company
-from .serializers import CompanySerializer, ProductSerializer     
+from .serializers import AssetAssignmentSerializer, CompanySerializer, ProductSerializer     
 class CompanyListView(APIView):
     def get(self, request,company_code):
         search_term = request.GET.get('search', '')
@@ -185,6 +185,24 @@ class CompanyListView(APIView):
         serializer = CompanySerializer(result_page, many=True)
         
         return paginator.get_paginated_response(serializer.data)
+class ReportAssetAssignmentView(APIView):
+    def get(self, request, company_id, user_id):
+        # Kullanıcıyı al
+        print(f"Company Code: {company_id}, User ID: {user_id}")
+        user = get_object_or_404(LdapUser, id=user_id)
+        print(f"User: {user}")
+
+        # İlgili kullanıcıya atanan varlıkları filtrele
+        assignments = AssetAssignment.objects.filter(assign_to_object_id=user.id)
+        print(f"Assignments: {assignments}")
+
+        if not assignments.exists():
+            return Response({"detail": "No asset assignments found for the given user."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Eğer varlıklar varsa, serializer kullanarak veriyi JSON formatına dönüştür
+        serialized_data = AssetAssignmentSerializer(assignments, many=True)
+        print(type(serialized_data))
+        return Response(serialized_data.data, status=status.HTTP_200_OK)
 class GetProductsAPI(APIView):
     def get(self, request, company_code):
         company = get_company(company_code)
@@ -210,8 +228,11 @@ class GetProductsAPI(APIView):
         products_data = [
             {
                 'id': product.id,
-                'name': f"{product.category.name} - {product.brand.name} - {product.model.name}",
-                'serial_number': product.serial_number
+                'category': {product.category.name},
+                'brand': {product.brand.name},
+                'model':{product.model.name},
+                'serial_number': product.serial_number,
+                'status': product.status.name,
             }
             
             for product in products

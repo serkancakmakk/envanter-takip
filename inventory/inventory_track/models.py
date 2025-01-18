@@ -61,27 +61,7 @@ from django.contrib.auth import get_user_model
     
 #     def __str__(self):
 #         return f"Permissions for {self.user.user.username} in {self.company.name}"
-# class LdapGroup(models.Model):
-#     name = models.CharField(max_length=255, unique=True)  # Grup ismi
-#     description = models.TextField(null=True, blank=True)  # Grup açıklaması (isteğe bağlı)
-#     company = models.ForeignKey(
-#         Company, 
-#         on_delete=models.CASCADE, 
-#         related_name='ldap_groups',
-#         null=True,  # Null değerine izin ver
-#         blank=True,
-#     )  # Şirketle ilişkilendirme
-#     users = models.ManyToManyField(
-#         LdapUser, 
-#         related_name='ldap_groups',
-#         blank=True
-#     )  # Kullanıcılar ile Many-to-Many ilişki
 
-#     created_at = models.DateTimeField(auto_now_add=True)  # Oluşturulma zamanı
-#     updated_at = models.DateTimeField(auto_now=True)  # Güncellenme zamanı
-
-#     def __str__(self):
-#         return f"{self.name} ({self.company.name})"
 class BaseModel(models.Model):
     is_active = models.BooleanField(default=True)
 
@@ -275,7 +255,27 @@ class LdapUser(AbstractBaseUser):
         return f"{self.first_name} {self.last_name} ({self.username})"
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
+class LdapGroup(models.Model):
+    name = models.CharField(max_length=255, unique=True)  # Grup ismi
+    description = models.TextField(null=True, blank=True)  # Grup açıklaması (isteğe bağlı)
+    company = models.ForeignKey(
+        Company, 
+        on_delete=models.CASCADE, 
+        related_name='ldap_groups',
+        null=True,  # Null değerine izin ver
+        blank=True,
+    )  # Şirketle ilişkilendirme
+    users = models.ManyToManyField(
+        LdapUser, 
+        related_name='ldap_groups',
+        blank=True
+    )  # Kullanıcılar ile Many-to-Many ilişki
 
+    created_at = models.DateTimeField(auto_now_add=True)  # Oluşturulma zamanı
+    updated_at = models.DateTimeField(auto_now=True)  # Güncellenme zamanı
+
+    def __str__(self):
+        return f"{self.name} ({self.company.name})"
 
 
 class AssetAssignment(models.Model):

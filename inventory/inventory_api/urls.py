@@ -4,7 +4,7 @@ from . import views
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import CreateStatusAPIView, DeleteCategoryAPI, GetBrandsAPI, GetCategoriesAPI,  GetModelsAPI, GetStatusAPI
+from .views import CreateStatusAPIView, DeleteCategoryAPI, GetBrandsAPI, GetCategoriesAPI,  GetModelsAPI, GetStatusAPI, ReportAssetAssignmentView
 urlpatterns = [
     path('get_models_api/<str:company_code>/', GetModelsAPI.as_view(), name='get_models_api'),
     path('get_brands_api/<str:company_code>/', GetBrandsAPI.as_view(), name='get_brands_api'),
@@ -14,4 +14,6 @@ urlpatterns = [
     path('companies/', views.CompanyListView.as_view(), name='company_list_api'),
     path('get_products_api/<str:company_code>/', views.GetProductsAPI.as_view(), name='get_products_api'),
     path('delete_category_api/<int:category_id>/', DeleteCategoryAPI.as_view(), name='delete_category_api'),
+    path('get_assign_product/<int:company_id>/<int:user_id>/', ReportAssetAssignmentView.as_view(), name='get_assign_product'),
+
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

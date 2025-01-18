@@ -17,3 +17,5 @@ def check_company_code(view_func):
         return view_func(request, *args, **kwargs)
 
     return _wrapped_view
+
+

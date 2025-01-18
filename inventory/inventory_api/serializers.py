@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from inventory_track.models import Company, Product
+from inventory_track.models import AssetAssignment, Company, Product
 
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,3 +10,12 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'brand', 'category_name', 'model', 'serial_number']  # Hangi alanların döneceğini belirtiyoruz
+# serializers.py
+from rest_framework import serializers
+from inventory_track.models import AssetAssignment
+
+class AssetAssignmentSerializer(serializers.ModelSerializer):
+    product_category = serializers.CharField(source='product.category.name', read_only=True)
+    class Meta:
+        model = AssetAssignment
+        fields = '__all__'  # Gerekli alanları belirtin

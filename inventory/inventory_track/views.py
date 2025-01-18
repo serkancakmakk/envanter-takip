@@ -51,7 +51,7 @@ def master_dashboard(request,company_code):
     })
 """ ŞİRKET OLUŞTURMA GÜNCELLEME VE DİĞERLERİ """
 from .decorators import check_company_code
-@check_company_code
+# @check_company_code
 def create_company(request):
     """
     Şirket oluşturmak için kullanılır
@@ -155,12 +155,26 @@ def edit_user(request, user_id):
         user.save()
         return JsonResponse({'success': True})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
-def list_users(request,company_code):
-    users = CustomUser.objects.values('id', 'username', 'email','first_name','last_name','is_active','phone')
+def list_users(request, company_code):
+    # Kullanıcının şirket kodunu kontrol et
+    company = get_company(company_code)
+    if request.user.company.code == settings.MASTER_COMPANY:
+        # MASTER_COMPANY için LdapUser tablosundaki kullanıcıları al
+        users = CustomUser.objects.values(
+            'id', 'username', 'email', 'first_name', 'last_name', 'is_active', 'phone'
+        )
+    else:
+        # Diğer kullanıcılar için CustomUser tablosundaki kullanıcıları al
+        users = LdapUser.objects.values(
+            'id', 'username', 'email', 'first_name', 'last_name', 'is_active'
+        )
+    
+    # Bağlam verilerini oluştur
     context = {
-        'users':users,
+        'company':company,
+        'users': users,
     }
-    return render(request,'list_users.html',context)
+    return render(request, 'list_users.html', context)
 @check_company_code
 def create_user(request, company_code):
     user_company = get_object_or_404(Company,code=  settings.MASTER_COMPANY)
@@ -260,43 +274,10 @@ from django.db.models import Count
 from .models import Company, Product
 
 from django.db.models import Count
-def get_products(request, company_code):
-    search = request.GET.get('search', '')
-    start = int(request.GET.get('start', 0))  # Sayfa başlangıç
-    length = int(request.GET.get('length', 10))  # Sayfa uzunluğu
-
-    try:
-        company = Company.objects.get(code=company_code)
-        # 'model__unit' ile modelin unit'ine erişiyoruz
-        products = Product.objects.select_related('category', 'brand', 'model', 'model__unit')\
-                                  .filter(company__code=company_code)
-
-        if search:
-            products = products.filter(name__icontains=search)
-
-        # Sayfalama işlemi
-        paginator = Paginator(products, length)
-        page = paginator.page((start // length) + 1)
-        data = list(page.object_list.values(
-            'category__name', 
-            'brand__name', 
-            'model__name',  # Modelin ismi
-            'serial_number', 
-            'model__unit',  # unit modelinden name alanı
-            'status'
-        ))
-
-        return JsonResponse({
-            'recordsTotal': paginator.count,
-            'recordsFiltered': paginator.count,
-            'data': data
-        })
-    except Company.DoesNotExist:
-        return JsonResponse({'error': 'Geçersiz şirket kodu'}, status=400)
 
 def inventory(request, company_code):
     # Eğer kullanıcı master kullanıcı ise tüm firmalara erişebilir
-    if request.user.company.code == settings.MASTER_COMPANY: # Master kullanıcı adı kontrolü
+    if request.user.company.code == settings.MASTER_COMPANY:  # Master kullanıcı adı kontrolü
         try:
             company = Company.objects.get(code=company_code)
         except Company.DoesNotExist:
@@ -314,12 +295,8 @@ def inventory(request, company_code):
             messages.error(request, "Geçersiz şirket kodu. Lütfen tekrar kontrol edin.")
             return redirect(request.META.get('HTTP_REFERER'))
 
-    # Ürünleri getir
-    products = get_products(request, company_code)  # Burada request'i de geçirdiğinizden emin olun
-
     context = {
         'company': company,
-        'products': products,
     }
 
     return render(request, 'inventory.html', context)
@@ -408,10 +385,11 @@ def create_product(request, company_code):
             return JsonResponse({
                 'success': True,
                 'product': {
-                    'id': product.id,
+                    # 'id': product.id,
                     'category': product.category.name,
                     'brand': product.brand.name,
                     'model': product.model.name,
+                    'unit': product.model.unit,  # Model'den gelen 'unit' değeri
                     'serial_number': product.serial_number,
                     'status': product.status.name,
                     'date_joined': product.date_joined,
@@ -881,23 +859,76 @@ def available_products(request, company_code):
     print(assignments_items)
     return render(request, 'available_products.html', {'assignments_items': assignments_items})
 from django.db.models import Q
+from django.core.serializers import serialize
+from django.core.paginator import Paginator
+from django.http import JsonResponse
+from django.core.serializers import serialize
+from django.db.models import Q
+from .models import Product, Company
 @login_required
+
+
+def get_products(request, company_code):
+    search = request.GET.get('search', '')
+    
+    try:
+        company = Company.objects.get(code=company_code)
+        products = Product.objects.select_related('category', 'brand', 'model').filter(company__code=company_code)
+
+        if search:
+            products = products.filter(name__icontains=search)
+
+        # Serileştirilmiş ürün verilerini al
+        product_data = list(products.values(
+            'category__name', 
+            'brand__name', 
+            'model__name', 
+            'serial_number', 
+            'model__unit', 
+            'status'
+        ))
+
+        total_products = products.count()  # Toplam ürün sayısını al
+
+        return product_data, total_products  # Hem ürün verisi hem de toplam ürün sayısını döndürüyoruz
+
+    except Company.DoesNotExist:
+        return [], 0  # Şirket bulunamazsa boş veri ve 0 döndürüyoruz
+
+# def get_unassigned_products(request, company_code):
+#     # Zimmetlenmemiş ürünleri filtrelemek için get_products fonksiyonunu kullan
+#     products = get_products(request, company_code)
+
+#     # Zimmetlenmemiş ürünleri filtrele
+#     unassigned_products = products.filter(
+#         Q(assign_by_content_type__isnull=True, assign_to_content_type__isnull=True)
+#     )
+    
+#     unassigned_count = unassigned_products.count()
+
+#     return unassigned_products, unassigned_count  # Zimmetlenmemiş ürünler ve sayısını döndürür
+
 def admin_dashboard(request, company_code):
-    # Kullanıcının şirketine ait ürünleri al
-    products = Product.objects.filter(company=request.user.company)
-    total_products = products.count()
+    """
+        Yönetici Alanını açar
+    """
+    check_company_code(request, company_code)  # Şirket kodunu kontrol eder.
+    
+    # Şirket ve ürünleri al
+    products, total_products = get_products(request, company_code)  # Hem ürün verisi hem de toplam ürün sayısı döner
     company = get_company(company_code)
-    # Zimmetlenmemiş ürünleri filtrele
-    unassigned_products = products.filter(
-        Q(assign_by_content_type__isnull=True, assign_to_content_type__isnull=True)
-    )
-    unassigned_count = unassigned_products.count()
+    
+    # Zimmetlenmemiş ürünleri al
+    # unassigned_products, unassigned_count = get_unassigned_products(request, company_code)
 
     # Yüzde hesaplama
-    unassigned_percentage = (unassigned_count / total_products) * 100 if total_products > 0 else 0
-    assignments = AssetAssignment.objects.select_related('product', 'assign_to_content_type', 'assign_by_content_type').filter(company = company).order_by('-created_at')[:5]
-    print(assignments)
-    # Kullanıcının şirketine göre kullanıcıları al
+    # unassigned_percentage = (unassigned_count / total_products) * 100 if total_products > 0 else 0
+
+    # Atama verilerini al
+    assignments = AssetAssignment.objects.select_related('product', 'assign_to_content_type', 'assign_by_content_type')\
+                                         .filter(company=company).order_by('-created_at')[:5]
+
+    # Kullanıcıları al
     if request.user.company.code != settings.MASTER_COMPANY:
         users = LdapUser.objects.filter(company=request.user.company)
     else:
@@ -905,12 +936,154 @@ def admin_dashboard(request, company_code):
 
     # Context verileri
     context = {
-        'assignments':assignments,
-        'products':products,
-        'total_products': total_products,
-        'unassigned_count': unassigned_count,
-        'users':users,
-        'unassigned_percentage': round(unassigned_percentage, 2),
+        'assignments': assignments,
+        'products': products,
+        # 'unassigned_count': unassigned_count,
+        'users': users,
+        # 'unassigned_percentage': round(unassigned_percentage, 2),
         'user_count': users.count(),
     }
+    
+    # Admin dashboard sayfasını render et
     return render(request, 'admin_area/admin_dashboard.html', context)
+
+from ldap3 import Server, Connection, ALL
+from ldap3 import MODIFY_REPLACE
+# Logging yapılandırması
+logging.basicConfig(level=logging.INFO)
+from time import sleep
+from ldap3 import Server, Connection, ALL, MODIFY_REPLACE, NTLM
+import logging
+from time import sleep
+from django.shortcuts import get_object_or_404
+from .models import LdapConfig  # Model yolu doğru olmalı
+from django.contrib.auth.models import User
+
+from ldap3 import Server, Connection, ALL, MODIFY_REPLACE, NTLM
+import logging
+from time import sleep
+from django.shortcuts import get_object_or_404
+from .models import LdapConfig  # LdapConfig modelinizi buraya göre ayarlayın.
+
+
+def create_user_view(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        first_name = request.POST.get("first_name")
+        last_name = request.POST.get("last_name")
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        
+        # Django'da kullanıcı oluştur
+        try:
+            user = LdapUser.objects.create_user(
+                username=username,
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                password=password
+            )
+            print(f"Kullanıcı oluşturuldu: {username}")
+            
+            # LDAP sunucusuna kullanıcıyı ekle
+            if create_user_in_ldap(user):  # Sadece kullanıcıyı gönderiyoruz
+                messages.success(request, "Kullanıcı LDAP sunucusuna başarıyla eklendi.")
+            else:
+                messages.warning(request, "Kullanıcı LDAP sunucusuna eklenemedi.")
+            
+            return redirect("create_user_view")
+        
+        except Exception as e:
+            messages.error(request, f"Bir hata oluştu: {str(e)}")
+            print(f"create_user_view Hatası: {str(e)}")
+
+    return render(request, "create_user.html")
+def create_user_in_ldap(django_user):
+    """
+    Django kullanıcısını LDAP sunucusuna ekler ve gerekli özellikleri atar.
+    """
+    try:
+        print(f"create_user_in_ldap çağrıldı: {django_user.username}")
+        
+        # LDAP sunucu bilgilerini al
+        company = get_object_or_404(Company,id=2)
+        ldap_config = get_object_or_404(LdapConfig, company = company  )
+        ldap_server = ldap_config.ldap_server
+        ldap_username = ldap_config.bind_username
+        ldap_password = ldap_config.bind_password
+        ldap_domain = ldap_config.bind_dn
+
+        # LDAP bağlantısı kur
+        server = Server(ldap_server, get_info=ALL)
+        connection = None
+
+        for attempt in range(3):  # 3 defa tekrar dene
+            try:
+                connection = Connection(
+                    server,
+                    user=f"{ldap_domain}\\{ldap_username}",
+                    password=ldap_password,
+                    authentication=NTLM,
+                    auto_bind=True
+                )
+                if connection.bind():
+                    print("LDAP bağlantısı başarılı.")
+                    break
+            except Exception as e:
+                print(f"LDAP bağlantı denemesi {attempt + 1} başarısız: {str(e)}")
+                if attempt == 2:  # 3 kez denedikten sonra hata ver
+                    raise e
+                sleep(5)
+        
+        if not connection or not connection.bound:
+            print("LDAP bağlantısı kurulamadı.")
+            return False
+
+        # Kullanıcı bilgilerini hazırla
+        user_dn = f"cn={django_user.username},ou=Users,dc=example,dc=com"
+        attributes = {
+            "objectClass": ["top", "person", "organizationalPerson", "user"],
+            "cn": django_user.username,
+            "sn": django_user.last_name or "NoLastName",
+            "givenName": django_user.first_name or "NoFirstName",
+            "displayName": f"{django_user.first_name} {django_user.last_name}",
+            "mail": django_user.email or "noemail@example.com",  # Varsayılan email
+            "userPassword": "default_password",
+        }
+
+        # Kullanıcıyı LDAP sunucusuna ekle
+        if connection.add(user_dn, attributes=attributes):
+            print(f"Kullanıcı LDAP sunucusuna başarıyla eklendi: {django_user.username}")
+        else:
+            print(f"Kullanıcı ekleme hatası: {connection.result['description']}")
+            return False
+
+        # Hesabın kilidini aç
+        connection.extend.microsoft.unlock_account(user=user_dn)
+        print(f"Hesap açıldı: {django_user.username}")
+
+        # Şifreyi ayarla
+        new_password = "new_password"
+        connection.extend.microsoft.modify_password(user=user_dn, new_password=new_password)
+        print(f"Şifre ayarlandı: {django_user.username}")
+
+        # userAccountControl ve pwdLastSet değerlerini ayarla
+        connection.modify(user_dn, changes={
+            "userAccountControl": (MODIFY_REPLACE, [512]),
+            "pwdLastSet": (MODIFY_REPLACE, [0]),
+        })
+        print(f"userAccountControl ve pwdLastSet güncellendi: {django_user.username}")
+
+        return True
+
+    except Exception as e:
+        print(f"LDAP işleminde hata oluştu: {str(e)}")
+        return False
+
+# REPORTS 
+def user_based_asset(request,company_code):
+    company = get_company(company_code)
+    context = {
+        'company':company,
+    }
+    return render(request,'reports/user_based_asset.html',context)

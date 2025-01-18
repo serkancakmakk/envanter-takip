@@ -23,14 +23,14 @@
                 iconColor: (function() {
                     switch ("{{ message.tags|default:'info' }}") {
                         case 'success':
-                            return 'green';  // Başarılı mesajlar için yeşil
+                            return 'green';
                         case 'error':
-                            return 'red';  // Hatalı mesajlar için kırmızı
+                            return 'red';
                         case 'warning':
-                            return 'orange';  // Uyarılar için turuncu
+                            return 'orange';
                         case 'info':
                         default:
-                            return 'blue';  // Bilgilendirme mesajları için mavi
+                            return 'blue';
                     }
                 })(),
                 customClass: {
@@ -42,8 +42,8 @@
             });
 
             Toast.fire({
-                icon: "{{ message.tags|default:'info' }}",  // Mesaj türüne göre ikon belirle
-                title: "{{ message|escapejs }}"  // Mesajı ekrana yazdır
+                icon: "{{ message.tags|default:'info' }}",
+                title: "{{ message|escapejs }}"
             });
         </script>
     {% endfor %}
@@ -60,8 +60,7 @@
                         <th>Marka</th>
                         <th>Model</th>
                         <th>Seri Numarası</th>
-                        <th>Ürün Birimi</th>
-                        <th>Ürün Durumu</th>
+                        <th>Durum</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -70,7 +69,82 @@
             </table>
         </div>
     </div>
-
+    <input type="hidden" id="company_code" value="{{company_code}}">
+    <style>
+        /* Style for the DataTable */
+        #inventory-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .sorting{
+            text-align: center;
+        }
+        /* Header Styling */
+        #inventory-table thead {
+            background-color: #f8f9fa;  /* Light background for the header */
+            text-align: center;
+        }
+    
+        #inventory-table thead th {
+            padding: 12px 15px;
+            font-weight: bold;
+            text-align: center;
+            color: #343a40;  /* Darker text color for contrast */
+        }
+    
+        /* Body Styling */
+        #inventory-table tbody td {
+            padding: 12px 15px;
+            text-align: center;
+            vertical-align: middle;
+            border-top: 1px solid #dee2e6;  /* Subtle border between rows */
+        }
+    
+        /* Row Hover Effect */
+        #inventory-table tbody tr:hover {
+            background-color: #f1f1f1;  /* Light hover color */
+            cursor: pointer;
+        }
+    
+        /* Pagination Styling */
+        .dataTables_paginate {
+            margin-top: 20px;
+            text-align: right;
+        }
+    
+        .dataTables_paginate a {
+            padding: 5px 10px;
+            margin-left: 5px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+    
+        .dataTables_paginate a:hover {
+            background-color: #0056b3;  /* Darker blue on hover */
+        }
+    
+        /* Search Box Styling */
+        .dataTables_filter input {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+    
+        /* Table Wrapper Styling */
+        .table-responsive {
+            margin-top: 20px;
+        }
+    
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 767px) {
+            #inventory-table th, #inventory-table td {
+                padding: 8px;
+            }
+        }
+    </style>
     <!-- DataTables JS -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.4/js/jquery.dataTables.min.js"></script>
@@ -78,24 +152,71 @@
 
     <script>
         $(document).ready(function() {
-            $('#inventory-table').DataTable({
-                processing: true,  // Verilerin yüklenmesi
-                serverSide: true,  // Sunucu taraflı işlem
-                ajax: {
-                    url: '{% url "get_products" company_code=company.code %}',  // AJAX isteği gönderilecek URL
-                    data: function(d) {
-                        // Burada AJAX isteğine ek parametreler ekleyebilirsiniz
-                        d.search = $('#search-input').val();  // Arama filtreleme
+            const companyCode = $('#company_code').val();  // Dinamik olarak company_code'yi al
+
+            const pageSize = 10;
+            let currentPage = 1;
+
+            // Verileri al ve tabloyu güncelle
+            function fetchProducts(page = 1) {
+                $.ajax({
+                    url: `/api/get_products_api/${companyCode}/?page=${page}`,  // API'yi çağır
+                    method: 'GET',
+                    data: {
+                        q: $('#search-input').val(),  // Arama terimi
+                    },
+                    success: function(response) {
+                        const products = response.results;
+                        const hasNext = response.has_next;
+
+                        // Ürünleri tabloya ekle
+                        let rows = '';
+                        products.forEach(product => {
+                            rows += `<tr>
+                                <td>${product.category}</td>
+                                <td>${product.brand}</td>
+                                <td>${product.model}</td>
+                                <td>${product.serial_number}</td>
+                                <td>${product.status}</td>
+                            </tr>`;
+                        });
+
+                        $('#inventory-table tbody').html(rows);  // Tabloyu güncelle
+
+                        // Sayfa numarası kontrolü
+                        if (hasNext) {
+                            $('#next-page').show();
+                        } else {
+                            $('#next-page').hide();
+                        }
+
+                        // DataTable'ı başlat
+                        $('#inventory-table').DataTable({
+                            paging: true,
+                            searching: true,
+                            ordering: true,
+                            pageLength: pageSize,  // Sayfa başına gösterilecek öğe sayısı
+                            lengthChange: false,  // Sayfa başına öğe sayısı değiştirilemesin
+                        });
+                    },
+                    error: function() {
+                        alert("Veriler alınırken bir hata oluştu.");
                     }
-                },
-                columns: [
-                    { data: 'category__name' },
-                    { data: 'brand__name' },
-                    { data: 'model__name' },
-                    { data: 'serial_number' },
-                    { data: 'model__unit' },
-                    { data: 'status' }
-                ]
+                });
+            }
+
+            // İlk ürünleri çek
+            fetchProducts();
+
+            // Arama filtreleme
+            $('#search-input').on('keyup', function() {
+                fetchProducts();
+            });
+
+            // Sonraki sayfayı yükle
+            $('#next-page').on('click', function() {
+                currentPage++;
+                fetchProducts(currentPage);
             });
         });
     </script>
