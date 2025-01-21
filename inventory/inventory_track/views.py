@@ -1083,7 +1083,9 @@ def create_user_in_ldap(django_user):
 # REPORTS 
 def user_based_asset(request,company_code):
     company = get_company(company_code)
+    users = LdapUser.objects.filter(company=company)
     context = {
+        'users':users,
         'company':company,
     }
     return render(request,'reports/user_based_asset.html',context)

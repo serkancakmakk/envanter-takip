@@ -55,9 +55,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Veritabanı tabanlı session kullanımı
 
-# Application definition
-
 INSTALLED_APPS = [
+    'apscheduler',
     'widget_tweaks',
     # 'silk',
     'ldap3',

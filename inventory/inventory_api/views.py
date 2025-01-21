@@ -1,3 +1,4 @@
+from venv import logger
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render
 from rest_framework.response import Response
@@ -185,24 +186,56 @@ class CompanyListView(APIView):
         serializer = CompanySerializer(result_page, many=True)
         
         return paginator.get_paginated_response(serializer.data)
+import logging
+logger = logging.getLogger(__name__)
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
+from .serializers import AssetAssignmentSerializer
+import logging
+
+logger = logging.getLogger(__name__)
+
 class ReportAssetAssignmentView(APIView):
     def get(self, request, company_id, user_id):
-        # Kullanıcıyı al
-        print(f"Company Code: {company_id}, User ID: {user_id}")
+        # Gelen parametreleri kontrol etmek için log yazdır
+        logger.debug(_("Company ID: %(company_id)s, User ID: %(user_id)s") % {'company_id': company_id, 'user_id': user_id})
+
+        # Kullanıcıyı getir veya 404 döndür
         user = get_object_or_404(LdapUser, id=user_id)
-        print(f"User: {user}")
+        logger.debug(_("User: %(username)s") % {'username': user.username})
 
-        # İlgili kullanıcıya atanan varlıkları filtrele
-        assignments = AssetAssignment.objects.filter(assign_to_object_id=user.id)
-        print(f"Assignments: {assignments}")
+        # Yetkilendirme kontrolü: Master company veya aynı şirket
+        if not (
+            request.user.company.code == settings.MASTER_COMPANY or  # Master company kontrolü
+            request.user.company.id == user.company.id               # Şirket ID'si eşleşiyor mu?
+        ):
+            return Response(
+                {"detail": _("Bu verilere erişim izniniz yok.")},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
+        # Kullanıcıya atanan varlıkları filtrele
+        assignments = AssetAssignment.objects.filter(assign_to_object_id=user.id, company_id=company_id)
+        logger.debug(_("Assignments: %(assignments)s") % {'assignments': assignments})
+
+        # Atama bulunamadığında 404 döndür
         if not assignments.exists():
-            return Response({"detail": "No asset assignments found for the given user."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": _("Kullanıcı (%(username)s) için atanmış bir varlık bulunamadı.") % {'username': user.username}},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        # Eğer varlıklar varsa, serializer kullanarak veriyi JSON formatına dönüştür
+        # Varlık atamaları varsa serialize et
         serialized_data = AssetAssignmentSerializer(assignments, many=True)
-        print(type(serialized_data))
+        logger.debug(_("Serialized Data Type: %(data_type)s") % {'data_type': type(serialized_data)})
+
         return Response(serialized_data.data, status=status.HTTP_200_OK)
+
+
 class GetProductsAPI(APIView):
     def get(self, request, company_code):
         company = get_company(company_code)
