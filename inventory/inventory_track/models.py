@@ -310,6 +310,9 @@ class AssetAssignment(models.Model):
     is_active = models.BooleanField(default=True)  # Aktiflik durumu
     return_date = models.DateTimeField(null=True, blank=True)  # Geri iade tarihi (isteğe bağlı)
     return_status = models.CharField(max_length=50, null=True, blank=True)  # Geri iade durumu (isteğe bağlı)
+    return_user_content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING, null=True, blank=True, related_name="return_user")
+    return_user_object_id = models.PositiveIntegerField(null=True, blank=True)
+    return_user = GenericForeignKey('return_user_content_type', 'return_user_object_id')  # Atanan kişi
     batch_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):

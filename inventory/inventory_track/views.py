@@ -497,6 +497,22 @@ def assignments(request, company_code):
         'assignments': assignments,
     }
     return render(request, 'assignments.html', context)
+def undo_assignments(request, company_code):
+    company = get_object_or_404(Company, code=company_code)
+    all_assignments = AssetAssignment.objects.filter(company=company).select_related('product')
+
+    
+    # Batch ID'ye göre gruplama
+    assignments = {
+        batch_id: list(items)
+        for batch_id, items in groupby(all_assignments, key=attrgetter('batch_id'))
+    }
+    
+    context = {
+        'company': company,
+        'assignments': assignments,
+    }
+    return render(request, 'undo_assignments.html', context)
 from django.http import HttpResponse
 def assignments(request, company_code):
     company = get_object_or_404(Company, code=company_code)
@@ -521,7 +537,14 @@ from django.http import Http404
 from datetime import datetime
 import uuid
 from .models import Company, Product, LdapUser, CustomUser, Category, AssetAssignment
-
+def undo_assignment_view(request,batch_id,company_code):
+    company = get_company(company_code)
+    if request.method == "POST":
+        assignment = get_object_or_404(AssetAssignment,batch_id=batch_id,company=company)
+        assignment.return_date = datetime.now()
+        assignment.save()
+        return redirect('success')
+            
 def asset_assignment_view(request, company_code):
     # Şirketi alıyoruz
     company = get_object_or_404(Company, code=company_code)

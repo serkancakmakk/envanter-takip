@@ -42,6 +42,8 @@ urlpatterns = [
     path('asset_assignment_view/<str:company_code>', views.asset_assignment_view, name='asset_assignment_view'),
     path('asset-assignment-form/<str:batch_id>/', views.asset_assignment_form, name='asset_assignment_form'),
     path('assignments/<str:company_code>', views.assignments, name='assignments'),
+    path('undo_assignments/<str:company_code>', views.undo_assignments, name='undo_assignments'),
+    path('undo_assignment_view/<str:batch_id>/<str:company_code>', views.undo_assignment_view, name='undo_assignment_view'),
     #
     path('calendar',views.calendar,name="calendar"),
     path('companies/',views.companies,name="companies"),
