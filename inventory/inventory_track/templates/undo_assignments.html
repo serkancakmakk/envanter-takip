@@ -39,14 +39,14 @@
                                     <td>{{ assignment.assign_by.username }}</td>
                                     <td>{{ assignment.assign_to.username }}</td>
                                     <td>
-                                        <form action="{% url 'undo_assignment_view' assignment.batch_id company.code %}" method="POST">
+                                        <form action="{% url 'undo_assignment_view' assignment.batch_id company.code %}" method="POST" class="delete-assignment-form">
                                             {% csrf_token %}
-                                        <button type="submit" 
-                                                class="btn btn-danger btn-sm delete-assignment-btn"
-                                                data-id="{{ assignment.id }}">
-                                            <i class="fas fa-trash-alt"></i> Sil
-                                        </button>
-                                    </form>
+                                            <button type="button" 
+                                                    class="btn btn-danger btn-sm delete-assignment-btn"
+                                                    data-id="{{ assignment.id }}">
+                                                <i class="fas fa-trash-alt"></i> Sil
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -79,6 +79,29 @@
             } else {
                 row.style.display = 'none'; // Satırı gizle
             }
+        });
+    });
+
+    // SweetAlert ile onaylama
+    document.querySelectorAll('.delete-assignment-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault(); // Butonun varsayılan davranışını engelle
+            let form = this.closest('form'); // İlgili formu al
+
+            Swal.fire({
+                title: 'Emin misiniz?',
+                text: 'Bu zimmeti geri teslim almak üzeresiniz.',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#3bd630',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Evet, Al',
+                cancelButtonText: 'İptal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit(); // Onaylanırsa formu gönder
+                }
+            });
         });
     });
 </script>
