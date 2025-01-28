@@ -87,7 +87,7 @@ def edit_ldap_config(request, company_code):
                 if not form.cleaned_data.get('bind_username'):
                     form.cleaned_data['bind_username'] = ldap_config.bind_username
                 if not form.cleaned_data.get('bind_password'):
-                    form.cleaned_data['bind_password'] = ldap_config.bind_password
+                    form.cleaned_data['bind_password'] = ldap_config.bind_password_encrypted
                 
                 # Formu kaydet
                 form.save()
@@ -219,55 +219,82 @@ def create_custom_user_from_settings(request):
         logger.error(f"Kullanıcı oluşturulurken bir hata oluştu: {str(e)}")
         messages.error(request, f"Kullanıcı oluşturulurken bir hata oluştu: {str(e)}")
         return HttpResponse(f"Bir hata oluştu: {str(e)}", status=500)
+# Kullanıcı doğrulama işlemlerini modülerleştirme
+def authenticate_and_login(request, company_code, username, password, is_master_login=False):
+    """
+    Kullanıcıyı doğrular ve giriş yapar.
+    
+    Args:
+        request: Django HTTP isteği.
+        company_code: Şirket kodu.
+        username: Kullanıcı adı.
+        password: Kullanıcı şifresi.
+        is_master_login: Master login mi olduğunu belirler.
+
+    Returns:
+        redirect: Başarılı girişte yönlendirme objesi.
+        messages: Hatalı girişte hata mesajı.
+    """
+    if company_code == settings.MASTER_COMPANY:
+        user, user_type = authenticate_custom_user(request, company_code, username, password)
+        if not user:
+            messages.error(request, "Kullanıcı bulunamadı")
+            return redirect('master_login' if is_master_login else 'ldap_login')
+
+        if not user.is_active:
+            messages.error(request, "Kullanıcı aktif değil")
+            return redirect('master_login' if is_master_login else 'ldap_login')
+
+        # Başarılı giriş
+        login(request, user, backend="inventory_track.backends.CustomUserBackend")
+        return redirect('product_page', request.user.company_code)
+
+    # LDAP kullanıcı doğrulama
+    user, status_code = authenticate_user(request, company_code, username, password)
+
+    ldap_error_messages = {
+        'invalid_company': "Geçersiz şirket kodu.",
+        'no_ldap_config': "Şirkete bağlı LDAP yapılandırması bulunamadı.",
+        'invalid_credentials': "Kullanıcı adı veya şifre hatalı.",
+        'ldap_connection_error': "LDAP sunucusuna bağlanılamadı. Lütfen sistem yöneticinize başvurun."
+    }
+
+    if status_code == 'authenticated':
+        login(request, user, backend="inventory_track.backends.LDAPBackend")
+        messages.success(request, "Başarıyla giriş yaptınız.")
+        return redirect('company_dashboard', company_code)
+    elif status_code in ldap_error_messages:
+        messages.error(request, ldap_error_messages[status_code])
+    else:
+        messages.error(request, "Bilinmeyen bir hata oluştu.")
+
+    return redirect('ldap_login')
+
+# Master login
 def master_login(request):
     if request.method == "POST":
         company_code = request.POST.get("company_code")
         username = request.POST.get("username")
         password = request.POST.get("password")
-        print('master_login')
-        # Kullanıcıyı doğrula
-        user, user_type = authenticate_custom_user(request, company_code, username, password)
-        if user.is_active == False:
-            messages.error(request, "Kullanıcı aktif değil")
-            return redirect('master_login')  # Giriş sayfasına geri yönlendir
-        if user:
-            print('User',user)
-            # Başarılı giriş durumunda, kullanıcıyı giriş yap
-            login(request, user, backend="inventory_track.backends.CustomUserBackend")
-            print(request.user.username)
-            # CustomUser dashboard'a yönlendir
-            return redirect('product_page',request.user.company_code)  # CustomUser dashboard
-        else:
-            messages.error(request, "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.")
-            return redirect('custom_login')  # Giriş sayfasına geri yönlendir
-    
+
+        return authenticate_and_login(request, company_code, username, password, is_master_login=True)
+
     return render(request, 'login.html')
+
+# LDAP login
 def ldap_login_view(request):
     if request.method == 'POST':
         company_code = request.POST.get('company_code')
         username = request.POST.get('username')
         password = request.POST.get('password')
 
-        user, status_code = authenticate_user(request, company_code, username, password)
-        print(status_code)
-        if status_code == 'authenticated':
-            login(request, user, backend="inventory_track.backends.LDAPBackend")
-            messages.success(request, "Başarıyla giriş yaptınız.")
-            return redirect('company_dashboard',company_code)
-        elif status_code == 'invalid_company':
-            messages.error(request, "Geçersiz şirket kodu.")
-        elif status_code == 'no_ldap_config':
-            messages.error(request, "Şirkete bağlı LDAP yapılandırması bulunamadı.")
-        elif status_code == 'invalid_credentials':
-            messages.error(request, "Kullanıcı adı veya şifre hatalı.")
-        elif status_code == 'ldap_connection_error':
-            messages.error(request, "LDAP sunucusuna bağlanılamadı. Lütfen sistem yöneticinize başvurun.")
-        else:
-            messages.error(request, "Bilinmeyen bir hata oluştu.")
+        return authenticate_and_login(request, company_code, username, password)
 
-        return redirect('ldap_login')  # Hata durumunda giriş sayfasına geri dön
+    context = {
+        'SUPPORT_LOGIN_URL': settings.SUPPORT_LOGIN_URL,
+    }
+    return render(request, 'ldap_login.html', context)
 
-    return render(request, 'ldap_login.html')
 """ ŞİRKET AYARLAMALARI SONU  """
 from django.shortcuts import render
 from django.db.models import Count
@@ -907,45 +934,49 @@ def get_products(request, company_code):
 #     unassigned_count = unassigned_products.count()
 
 #     return unassigned_products, unassigned_count  # Zimmetlenmemiş ürünler ve sayısını döndürür
-
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 def admin_dashboard(request, company_code):
     """
         Yönetici Alanını açar
     """
     check_company_code(request, company_code)  # Şirket kodunu kontrol eder.
-    
+
     # Şirket ve ürünleri al
     products, total_products = get_products(request, company_code)  # Hem ürün verisi hem de toplam ürün sayısı döner
     company = get_company(company_code)
-    
-    # Zimmetlenmemiş ürünleri al
-    # unassigned_products, unassigned_count = get_unassigned_products(request, company_code)
 
-    # Yüzde hesaplama
-    # unassigned_percentage = (unassigned_count / total_products) * 100 if total_products > 0 else 0
-
-    # Atama verilerini al
     assignments = AssetAssignment.objects.select_related('product', 'assign_to_content_type', 'assign_by_content_type')\
                                          .filter(company=company).order_by('-created_at')[:5]
 
-    # Kullanıcıları al
+    # Kullanıcıları al ve sayfalama ekle
     if request.user.company.code != settings.MASTER_COMPANY:
-        users = LdapUser.objects.filter(company=request.user.company)
+        users = LdapUser.objects.filter(company=request.user.company).order_by('-username')
     else:
-        users = CustomUser.objects.all()
+        users = CustomUser.objects.all().order_by('username')
 
+    paginator = Paginator(users, 10)  # Sayfa başına 10 kullanıcı
+    page_number = request.GET.get('page')
+
+    try:
+        paginated_users = paginator.page(page_number)
+    except PageNotAnInteger:
+        paginated_users = paginator.page(1)
+    except EmptyPage:
+        paginated_users = paginator.page(paginator.num_pages)
+    print(paginated_users)
     # Context verileri
     context = {
+        'total_products':total_products,
         'assignments': assignments,
         'products': products,
-        # 'unassigned_count': unassigned_count,
-        'users': users,
-        # 'unassigned_percentage': round(unassigned_percentage, 2),
-        'user_count': users.count(),
+        'users': paginated_users,  # Sayfalı kullanıcılar
+        'user_count': paginator.count,  # Toplam kullanıcı sayısı
+        'paginator': paginator,  # Paginator nesnesi
     }
-    
+
     # Admin dashboard sayfasını render et
     return render(request, 'admin_area/admin_dashboard.html', context)
+
 
 from ldap3 import Server, Connection, ALL
 from ldap3 import MODIFY_REPLACE
@@ -1081,11 +1112,29 @@ def create_user_in_ldap(django_user):
         return False
 
 # REPORTS 
-def user_based_asset(request,company_code):
+def user_based_asset(request, company_code):
+    # Şirketi getir
     company = get_company(company_code)
-    users = LdapUser.objects.filter(company=company)
+
+    # Kullanıcı şirket koduna göre filtreleme
+    if request.user.company.code == settings.MASTER_COMPANY:
+        # MASTER_COMPANY'ye bağlı kullanıcılar
+        users = CustomUser.objects.filter(company=company)
+    else:
+        # Diğer şirketlerdeki LDAP kullanıcıları
+        users = LdapUser.objects.filter(company=company)
+
+    # Bağlam (context) oluştur
+    context = {
+        'users': users,
+        'company': company,
+    }
+
+    # Şablonu render et
+    return render(request, 'reports/user_based_asset.html', context)
+def calendar(request):
+    users = LdapUser.objects.all()
     context = {
         'users':users,
-        'company':company,
     }
-    return render(request,'reports/user_based_asset.html',context)
+    return render(request,'admin_area/calendar1.html',context)

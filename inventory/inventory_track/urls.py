@@ -6,6 +6,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .views import get_models,master_dashboard
 urlpatterns = [
+    path("", views.ldap_login_view, name="ldap-login"),
     path('edit_user/<int:user_id>/', views.edit_user, name='edit_user'),  # Master kullanıcı login
     path('admin_dashboard/<str:company_code>/', views.admin_dashboard, name='admin_dashboard'),  # Master kullanıcı login
     # path('login', views.company_login, name='company_login'),
@@ -42,6 +43,7 @@ urlpatterns = [
     path('asset-assignment-form/<str:batch_id>/', views.asset_assignment_form, name='asset_assignment_form'),
     path('assignments/<str:company_code>', views.assignments, name='assignments'),
     #
+    path('calendar',views.calendar,name="calendar"),
     path('companies/',views.companies,name="companies"),
     path('check_code/<int:code>/', views.check_code, name='check_code'),
     path('mail_config/<int:user_id>/<str:company_code>', views.email_update_config, name='email_update_config'),

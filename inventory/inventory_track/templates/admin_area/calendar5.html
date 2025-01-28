@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduler Component</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 1px;
+            background-color: #e5e5e5;
+        }
+        .schedule-cell, .schedule-header {
+            background-color: white;
+            height: 80px;
+            overflow-y: auto;
+            padding: 4px;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+        .schedule-header {
+            background-color: #f3f4f6;
+            font-weight: bold;
+            height: 50px;
+        }
+        .employee-header {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            text-align: center;
+            padding: 8px;
+            height: 50px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto py-6">
+        <h1 class="text-2xl font-bold text-center mb-6">Çalışan Takvim Planlayıcı</h1>
+
+        <div id="scheduler" class="schedule-grid">
+            <!-- Gün başlıkları -->
+            <div class="schedule-header">Çalışan</div>
+            <div class="schedule-header">Pazartesi</div>
+            <div class="schedule-header">Salı</div>
+            <div class="schedule-header">Çarşamba</div>
+            <div class="schedule-header">Perşembe</div>
+            <div class="schedule-header">Cuma</div>
+            <div class="schedule-header">Cumartesi</div>
+            <div class="schedule-header">Pazar</div>
+        </div>
+
+        <!-- Etkinlik Ekleme Butonu -->
+        <div class="text-center mt-6">
+            <button id="addEvent" class="px-4 py-2 bg-blue-500 text-white rounded shadow hover:bg-blue-600">Etkinlik Ekle</button>
+        </div>
+    </div>
+
+    <script>
+        const employees = ['Ali', 'Ayşe', 'Fatma', 'Mehmet', 'Serkan', 'Canan', 'Elif'];
+        const scheduler = document.getElementById('scheduler');
+
+        // Dinamik hücre oluşturma
+        employees.forEach(employee => {
+            const employeeHeader = document.createElement('div');
+            employeeHeader.className = 'employee-header';
+            employeeHeader.textContent = employee;
+            scheduler.appendChild(employeeHeader);
+
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            days.forEach(day => {
+                const cell = document.createElement('div');
+                cell.className = 'schedule-cell';
+                cell.dataset.day = day;
+                cell.dataset.employee = employee;
+                scheduler.appendChild(cell);
+            });
+        });
+
+        document.getElementById('addEvent').addEventListener('click', () => {
+            Swal.fire({
+                title: 'Yeni Etkinlik Ekle',
+                html: `
+                    <select id="employee" class="swal2-select">
+                        ${employees.map(emp => `<option value="${emp}">${emp}</option>`).join('')}
+                    </select>
+                    <select id="day" class="swal2-select">
+                        <option value="monday">Pazartesi</option>
+                        <option value="tuesday">Salı</option>
+                        <option value="wednesday">Çarşamba</option>
+                        <option value="thursday">Perşembe</option>
+                        <option value="friday">Cuma</option>
+                        <option value="saturday">Cumartesi</option>
+                        <option value="sunday">Pazar</option>
+                    </select>
+                    <textarea id="details" class="swal2-textarea" placeholder="Etkinlik Detayları"></textarea>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Ekle',
+                preConfirm: () => {
+                    const employee = document.getElementById('employee').value;
+                    const day = document.getElementById('day').value;
+                    const details = document.getElementById('details').value;
+
+                    if (!employee || !day || !details) {
+                        Swal.showValidationMessage('Tüm alanları doldurmalısınız!');
+                    }
+
+                    return { employee, day, details };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const { employee, day, details } = result.value;
+                    const cell = document.querySelector(`.schedule-cell[data-day="${day}"][data-employee="${employee}"]`);
+
+                    if (cell) {
+                        const eventDiv = document.createElement('div');
+                        eventDiv.classList.add('bg-blue-100', 'text-blue-700', 'p-1', 'rounded', 'mt-1');
+                        eventDiv.textContent = details;
+                        cell.appendChild(eventDiv);
+                        Swal.fire('Başarılı!', 'Etkinlik eklendi.', 'success');
+                    } else {
+                        Swal.fire('Hata!', 'Çalışan veya gün bulunamadı.', 'error');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

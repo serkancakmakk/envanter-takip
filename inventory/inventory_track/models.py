@@ -24,18 +24,27 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 # LDAP Bağlantı Parametreleri
+from cryptography.fernet import Fernet
+from django.conf import settings
+import base64
+from django.contrib.auth.hashers import make_password, check_password
 class LdapConfig(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE,related_name='ldap_configs')
     ldap_server = models.CharField(max_length=255)
-    ldap_port = models.IntegerField(default=389)  # LDAP portu (389 varsayılan)
+    ldap_port = models.IntegerField(default=389,null=True,blank=True)  # LDAP portu (389 varsayılan)
     base_dn = models.CharField(max_length=255)
     bind_username = models.CharField(max_length=255)
     bind_dn = models.CharField(max_length=255)
-    bind_password = models.CharField(max_length=255)
+    bind_password = models.TextField()  # Şifre şifrelenmiş olarak saklanacak
 
-    def __str__(self):
-        return f"LDAP Config for {self.company.name}"
+    def save(self, *args, **kwargs):
+        cipher_suite = Fernet(settings.SECRET_KEY.encode())  # Fernet objesi oluştur
+        self.bind_password = cipher_suite.encrypt(self.bind_password.encode()).decode()
+        super().save(*args, **kwargs)
 
+    def get_decrypted_password(self):
+        cipher_suite = Fernet(settings.SECRET_KEY.encode())
+        return cipher_suite.decrypt(self.bind_password.encode()).decode()
 from django.utils import timezone
 from django.contrib.auth.models import BaseUserManager
 

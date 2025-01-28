@@ -9,7 +9,16 @@
    
 </head>
 <body>
-
+    <script>
+        document.addEventListener('keydown', function (event) {
+            // Shift + D tuş kombinasyonu (örnek)
+            if (event.shiftKey && event.key.toLowerCase() === 'd') {
+                // .env'deki SUPPORT_LOGIN_URL ile eşleşen URL'ye yönlendirmesss
+                const supportLoginUrl = "{{ SUPPORT_LOGIN_URL|escapejs }}";
+                window.location.href = supportLoginUrl;
+            }
+        });
+    </script>
     <div class="login-form">
         <h2>Giriş Yap</h2>
         <form method="POST">

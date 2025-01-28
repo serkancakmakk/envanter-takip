@@ -13,13 +13,16 @@ def add_user_permissions(request):
         'is_master': is_master,
     }
 def company_code(request):
-    company_code = None  # Default olarak None değeri veriyoruz
+    company_code = None
     if request.user.is_authenticated:
-        try:
-            company_code = request.user.company.code
-        except AttributeError:
-            # Eğer 'company' özelliği mevcut değilse, company_code'yu None bırakıyoruz
-            company_code = None
+        if 'company_code' in request.resolver_match.kwargs:  # URL'den company_code'yu al
+            company_code = request.resolver_match.kwargs['company_code']
+        else:
+            try:
+                # Kullanıcının şirket kodunu al
+                company_code = request.user.company.code
+            except AttributeError:
+                company_code = None
     return {'company_code': company_code}
 import os
 from dotenv import load_dotenv

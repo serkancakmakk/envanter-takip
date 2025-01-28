@@ -23,16 +23,14 @@ from django.shortcuts import get_object_or_404
 from .models import LdapGroup
 import logging
 
-def get_all_ldap_users_and_groups(request):
+def get_all_ldap_users_and_groups(company):
     from inventory_track.models import LdapUser
-    print('LDAP Kullanıcıları ve Grupları Alınıyor...')
     try:
-        company = request.user.company
         ldap_config = get_object_or_404(LdapConfig, company=company)
         print('Şirket Bilgileri Alınıyor')  # Şirketin LDAP yapılandırma bilgilerini alıyoruz
         ldap_server = ldap_config.ldap_server
         ldap_username = ldap_config.bind_username
-        ldap_password = ldap_config.bind_password
+        ldap_password = ldap_config.get_decrypted_password()
         ldap_domain = ldap_config.bind_dn
 
         # LDAP sunucusuna bağlan

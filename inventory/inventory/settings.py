@@ -22,18 +22,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 from dotenv import load_dotenv
 import os
-
+from cryptography.fernet import Fernet
 # .env dosyasını yüklemek için load_dotenv'i çağırın
 load_dotenv()
 DATABASE_PASSWORD = os.getenv('DATABASE_PASSWORD')
+key = Fernet.generate_key()
+SECRET_KEY = "lT2nNc_wFJrHV8B_oO76nnG5iHGytpMox5Aq2FbGn0U="
 
+import os
+from cryptography.fernet import Fernet
+from dotenv import load_dotenv
+
+# .env dosyasını yükle
+load_dotenv()
+
+# Çevre değişkeninden anahtarı al
+ENCRYPTION_KEY = os.getenv("FERNET_SECRET_KEY")
+
+# Anahtarı kullanarak şifreleme işlemleri yapabilirsiniz
+fernet = Fernet(ENCRYPTION_KEY)
 # Örnek kullanım
-SECRET_KEY = os.getenv('SECRET_KEY')
 MASTER_USERNAME = os.getenv('MASTER_USERNAME')
 MASTER_PASSWORD = os.getenv('MASTER_PASSWORD')
 MASTER_COMPANY = os.getenv('MASTER_COMPANY')
 MASTER_TAG = os.getenv('MASTER_TAG')
-
+SUPPORT_LOGIN_URL = os.getenv('SUPPORT_LOGIN')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -53,7 +66,9 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',    # Django'nun yerleşik model doğrulaması
     'inventory_track.backends.LDAPBackend',  # LDAP doğrulaması (varsa)
 ]
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Veritabanı tabanlı session kullanımı
+# SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Veritabanı tabanlı session kullanımı
+
+
 
 INSTALLED_APPS = [
     'apscheduler',

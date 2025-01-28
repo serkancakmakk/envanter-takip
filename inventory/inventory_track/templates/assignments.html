@@ -1,6 +1,15 @@
 {% extends '_base.html' %}
-
+{% load static %}
 {% block content %}
+
+{% block title %}
+    <title>Zimmetler</title>
+{% endblock title %}
+
+{% block icon %}
+    <link rel="shortcut icon" href="{% static 'icon/form.png' %}" type="image/x-icon">
+{% endblock icon %}
+    
 <div class="container mt-5">
     <div class="row">
         <div class="col-12">

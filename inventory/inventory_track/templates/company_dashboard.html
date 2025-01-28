@@ -5,6 +5,11 @@
     <link rel="stylesheet" href="{% static 'css/company_dashboard.css' %}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    
+    {% block icon %}
+      <link rel="shortcut icon" href="{% static 'icon/settings.png' %}" type="image/x-icon">
+    {% endblock icon %}
+      
     {% block title %}
     <title>{{ company.name }}- Yönetim Paneli</title>
     {% endblock title %}       
@@ -31,7 +36,7 @@
     </div>
     <div class="row" id="company_info_row">
         <div class="col-md-6">
-            <p id="company_info">Şirket adı: <strong> {{ company.name }}</strong></p>
+            <p id="company_info" aria-label="Şirket Adı">Şirket adı: <strong> {{ company.name }}</strong></p>
             <p id="company_info">Şirketin sahibi:<strong> {{ company.owner }}</strong></p>
             <p id="company_info">Şirket Adres: <strong>{{ company.address }}</strong></p>
             <p id="company_info">Şirket Telefon:<strong> {{ company.phone }}</strong></p>
@@ -67,6 +72,12 @@
             <label for="basic-url" class="form-label">Active Directory Kullanıcı Şifresi : </label>
             <div class="input-group">
               <input type="text" class="form-control" name ="bind_password" value="{{ldap_configs.bind_password}}" >
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="basic-url" class="form-label">Active Directory Kullanıcı Şifresi : </label>
+            <div class="input-group">
+              <input type="text" class="form-control" name ="bind_password_confirm" value="{{ldap_configs.bind_password}}" >
             </div>
           </div>
           <div class="mb-3">

@@ -33,18 +33,27 @@ class CompanyCreateForm(forms.ModelForm):
         return code
 from django import forms
 from .models import LdapConfig
-
+from django import forms
+from .models import LdapConfig
+from cryptography.fernet import Fernet
+from django.conf import settings
 class LdapConfigForm(forms.ModelForm):
+    bind_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'placeholder': 'Enter Bind Password'}),
+        label='Bind Password',
+        required=True
+    )
+
     class Meta:
         model = LdapConfig
         fields = ['ldap_server', 'ldap_port', 'base_dn', 'bind_username', 'bind_dn', 'bind_password']
-        
-    # Alanlar zorunlu değil
-    ldap_port = forms.CharField(required=False)
-    bind_dn = forms.CharField(required=False)
-    base_dn = forms.CharField(required=False)
-    bind_username = forms.CharField(required=False)
-    bind_password = forms.CharField(required=False, widget=forms.PasswordInput)
+        widgets = {
+            'ldap_server': forms.TextInput(attrs={'placeholder': 'Enter LDAP server'}),
+            'ldap_port': forms.NumberInput(attrs={'placeholder': 'Enter LDAP port'}),
+            'base_dn': forms.TextInput(attrs={'placeholder': 'Enter Base DN'}),
+            'bind_username': forms.TextInput(attrs={'placeholder': 'Enter Bind Username'}),
+            'bind_dn': forms.TextInput(attrs={'placeholder': 'Enter Bind DN'}),
+        }
 
 class CategoryForm(forms.ModelForm):
     class Meta:

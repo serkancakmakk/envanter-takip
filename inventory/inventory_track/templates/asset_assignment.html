@@ -1,6 +1,11 @@
 {% extends '_base.html' %}
-
+{% load static %}
 {% block content %}
+
+{% block icon %}
+  <link rel="shortcut icon" href="{% static 'icon/form.png' %}" type="image/x-icon">
+{% endblock icon %}
+  
   {% block title %}
     <title>Zimmet Formu | {{company_code}}</title>
   {% endblock title %}

@@ -2,199 +2,224 @@
 {% load static %}
 {% block content %}
 
-    
 {% block icon %}
 <link rel="icon" type="image/x-icon" href="{% static 'icon/asset.png' %}">
 {% endblock icon %}
 
 {% block title %}
-    <title> Atama Raporları </title>
+<title>Atama Raporları</title>
 {% endblock title %}
-    
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-        }
 
-        .container {
-            margin: 40px auto;
-            max-width: 90%;
-            background: #fff;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            overflow: hidden;
-            padding: 20px;
-        }
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        padding: 0;
+    }
 
+    .container {
+        margin: 40px auto;
+        max-width: 100%;
+        background: #fff;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        padding: 20px;
+        overflow-x: auto;
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+
+    .form-select {
+        width: 100%;
+        max-width: 400px;
+        margin: 10px auto 20px auto;
+        display: block;
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        background-color: #fff;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    thead {
+        background-color: #f0a500;
+        color: #fff;
+    }
+
+    thead th {
+        text-align: left;
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+
+    tbody tr {
+        transition: background-color 0.3s;
+    }
+
+    tbody tr:hover {
+        background-color: #f1f7f5;
+    }
+
+    tbody td {
+        padding: 12px 15px;
+        font-size: 14px;
+        color: #333;
+    }
+
+    tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    tbody tr:nth-child(odd) {
+        background-color: #fff;
+    }
+
+    .text-center {
+        text-align: center;
+        font-style: italic;
+        color: #888;
+    }
+
+    .text-danger {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
         h2 {
-            text-align: center;
-            color: #333;
-            font-weight: 600;
-            margin-bottom: 20px;
+            font-size: 20px;
         }
 
         .form-select {
-            width: 300px;
-            margin: 10px auto 20px auto;
-            display: block;
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            font-size: 14px;
+            width: 100%;
         }
 
         table {
-            width: 100%;
-            border-collapse: collapse;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        thead {
-            background-color:rgb(228, 175, 0);
-            color: #fff;
+            font-size: 12px;
         }
 
         thead th {
-            text-align: left;
-            padding: 12px 15px;
-            font-size: 14px;
-        }
-
-        tbody tr {
-            transition: background-color 0.3s;
-        }
-
-        tbody tr:hover {
-            background-color: #f1f7f5;
+            padding: 10px;
         }
 
         tbody td {
-            padding: 12px 15px;
-            font-size: 14px;
-            color: #333;
+            padding: 10px;
         }
+    }
+</style>
 
-        tbody td:first-child {
-            font-weight: bold;
-            color: #4CAF50;
-        }
+<div class="container">
+    <h2>Varlık Atama Raporu</h2>
 
-        tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
+    <!-- Kullanıcı Seçme -->
+    <select name="" class="form-select" id="user-select">
+        <option value="" disabled selected>Kullanıcı Seçin</option>
+        {% for user in users %}
+        <option value="{{ user.id }}">{{ user.first_name }}</option>
+        {% endfor %}
+    </select>
 
-        tbody tr:nth-child(odd) {
-            background-color: #fff;
-        }
+    <!-- Tablo -->
+    <table id="asset-table" class="table-responsive">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Ürün</th>
+                <th>Kategori</th>
+                <th>Atayan Kişi</th>
+                <th>Atanan Kişi</th>
+                <th>Atama Tarihi</th>
+                <th>Durum</th>
+                <th>Geri İade Tarihi</th>
+                <th>Geri İade Durumu</th>
+                <th>Ekstra Bilgi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Burada AJAX ile doldurulacak -->
+            <tr>
+                <td colspan="10" class="text-center">Lütfen bir kullanıcı seçin.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 
-        .text-center {
-            text-align: center;
-            font-style: italic;
-            color: #888;
-        }
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const userSelect = document.getElementById('user-select');
+        const assetTableBody = document.querySelector('#asset-table tbody');
 
-        .text-danger {
-            color: #e74c3c;
-            font-weight: bold;
-        }
-    </style>
-    <div class="container">
-        <h2>Varlık Atama Raporu</h2>
+        userSelect.addEventListener('change', function () {
+            const userId = this.value;
+            if (!userId) {
+                assetTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="text-center">Kullanıcı seçilmedi.</td>
+                    </tr>
+                `;
+                return;
+            }
 
-        <!-- Kullanıcı Seçme -->
-        <select name="" class="form-select" id="user-select">
-            <option value="" disabled selected>Kullanıcı Seçin</option>
-            {% for user in users %}
-            <option value="{{ user.id }}">{{ user.first_name }}</option>
-            {% endfor %}
-        </select>
+            // Simülasyon için API çağrısı
+            fetch(`/api/get_assign_product/2/${userId}/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Ağ hatası');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    assetTableBody.innerHTML = '';
 
-        <!-- Tablo -->
-        <table id="asset-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Ürün</th>
-                    <th>Kategori</th>
-                    <th>Atayan Kişi</th>
-                    <th>Atanan Kişi</th>
-                    <th>Atama Tarihi</th>
-                    <th>Durum</th>
-                    <th>Geri İade Tarihi</th>
-                    <th>Geri İade Durumu</th>
-                    <th>Ekstra Bilgi</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Burada AJAX ile doldurulacak -->
-                <tr>
-                    <td colspan="10" class="text-center">Lütfen bir kullanıcı seçin.</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const userSelect = document.getElementById('user-select');
-            const assetTableBody = document.querySelector('#asset-table tbody');
-
-            userSelect.addEventListener('change', function () {
-                const userId = this.value;
-                if (!userId) {
-                    assetTableBody.innerHTML = `
-                        <tr>
-                            <td colspan="10" class="text-center">Kullanıcı seçilmedi.</td>
-                        </tr>
-                    `;
-                    return;
-                }
-
-                // Simülasyon için API çağrısı
-                fetch(`/api/get_assign_product/2/${userId}/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        assetTableBody.innerHTML = '';
-
-                        if (data.length) {
-                            data.forEach(item => {
-                                const row = `
-                                    <tr>
-                                        <td>${item.id}</td>
-                                        <td>${item.product_category}</td>
-                                        <td>${item.product_model}</td>
-                                        <td>${item.assign_by_details.name}</td>
-                                        <td>${item.assign_to_details.name}</td>
-                                        <td>${item.localized_assign_date}</td>
-                                        <td>${item.assign_status}</td>
-                                        <td>${item.return_date || 'Henüz iade edilmedi'}</td>
-                                        <td>${item.return_status || 'Henüz iade edilmedi'}</td>
-                                        <td>${item.info || 'Bilgi yok'}</td>
-                                    </tr>
-                                `;
-                                assetTableBody.innerHTML += row;
-                            });
-                        } else {
-                            assetTableBody.innerHTML = `
+                    if (data.length) {
+                        data.forEach(item => {
+                            const row = `
                                 <tr>
-                                    <td colspan="10" class="text-center">Seçilen kullanıcı için atanmış varlık bulunamadı.</td>
+                                    <td>${item.id}</td>
+                                    <td>${item.product_category}</td>
+                                    <td>${item.product_model}</td>
+                                    <td>${item.assign_by_details.name}</td>
+                                    <td>${item.assign_to_details.name}</td>
+                                    <td>${item.localized_assign_date}</td>
+                                    <td>${item.assign_status}</td>
+                                    <td>${item.return_date || 'Henüz iade edilmedi'}</td>
+                                    <td>${item.return_status || 'Henüz iade edilmedi'}</td>
+                                    <td>${item.info || 'Bilgi yok'}</td>
                                 </tr>
                             `;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Hata:', error);
+                            assetTableBody.innerHTML += row;
+                        });
+                    } else {
                         assetTableBody.innerHTML = `
                             <tr>
-                                <td colspan="10" class="text-danger">Veri alınırken hata oluştu.</td>
+                                <td colspan="10" class="text-center">Seçilen kullanıcı için atanmış varlık bulunamadı.</td>
                             </tr>
                         `;
-                    });
-            });
+                    }
+                })
+                .catch(error => {
+                    console.error('Hata:', error);
+                    assetTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="10" class="text-danger">Veri alınırken hata oluştu.</td>
+                        </tr>
+                    `;
+                });
         });
-    </script>
+    });
+</script>
+
 {% endblock content %}

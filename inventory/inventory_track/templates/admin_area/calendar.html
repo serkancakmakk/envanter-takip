@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Takvim ve Görev Ekleme</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .calendar {
+      width: 400px;
+      background: #ffffff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .calendar-header {
+      background: #3f51b5;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .calendar-header button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .calendar-header button:hover {
+      color: #ffcc00;
+    }
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: #f6f8fa;
+      padding: 10px;
+      font-weight: 500;
+      text-align: center;
+    }
+    .calendar-days div {
+      color: #3f51b5;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      grid-gap: 5px;
+      padding: 10px;
+    }
+    .calendar-grid div {
+      height: 50px;
+      background: #e7e9f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .calendar-grid div:hover {
+      background: #3f51b5;
+      color: white;
+      transform: scale(1.05);
+    }
+    .calendar-grid .today {
+      background: #ffcc00;
+      color: white;
+    }
+
+    /* Modal için stil */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 400px;
+    }
+    .modal-header {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .hour-slot {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #ddd;
+    }
+    .hour-slot button {
+      background: none;
+      border: 1px solid #3f51b5;
+      color: #3f51b5;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 4px;
+    }
+    .hour-slot button:hover {
+      background: #3f51b5;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="calendar">
+    <div class="calendar-header">
+      <button onclick="prevMonth()">&#8249;</button>
+      <span id="month-year">Ocak 2025</span>
+      <button onclick="nextMonth()">&#8250;</button>
+    </div>
+    <div class="calendar-days">
+      <div>Pzt</div>
+      <div>Sal</div>
+      <div>Çar</div>
+      <div>Per</div>
+      <div>Cum</div>
+      <div>Cmt</div>
+      <div>Paz</div>
+    </div>
+    <div class="calendar-grid" id="calendar-grid">
+      <!-- Günler burada dinamik olarak doldurulacak -->
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="task-modal">
+    <div class="modal-content">
+      <div class="modal-header" id="modal-header"></div>
+      <div id="hourly-tasks"></div>
+      <button onclick="closeModal()">Kapat</button>
+    </div>
+  </div>
+
+  <script>
+    const monthYear = document.getElementById('month-year');
+    const calendarGrid = document.getElementById('calendar-grid');
+    const taskModal = document.getElementById('task-modal');
+    const modalHeader = document.getElementById('modal-header');
+    const hourlyTasks = document.getElementById('hourly-tasks');
+    const date = new Date();
+    let currentMonth = date.getMonth();
+    let currentYear = date.getFullYear();
+    let selectedDay;
+
+    const renderCalendar = () => {
+      calendarGrid.innerHTML = '';
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+      for (let i = firstDay === 0 ? 6 : firstDay - 1; i > 0; i--) {
+        const day = document.createElement('div');
+        day.textContent = daysInPrevMonth - i + 1;
+        day.style.opacity = '0.5';
+        calendarGrid.appendChild(day);
+      }
+
+      for (let i = 1; i <= daysInMonth; i++) {
+        const day = document.createElement('div');
+        day.textContent = i;
+        if (
+          i === date.getDate() &&
+          currentMonth === date.getMonth() &&
+          currentYear === date.getFullYear()
+        ) {
+          day.classList.add('today');
+        }
+        day.onclick = () => openModal(i);
+        calendarGrid.appendChild(day);
+      }
+
+      for (let i = 1; i <= (42 - calendarGrid.children.length); i++) {
+        const day = document.createElement('div');
+        day.textContent = i;
+        day.style.opacity = '0.5';
+        calendarGrid.appendChild(day);
+      }
+
+      const months = [
+        'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+        'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+      ];
+      monthYear.textContent = `${months[currentMonth]} ${currentYear}`;
+    };
+
+    const prevMonth = () => {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      renderCalendar();
+    };
+
+    const nextMonth = () => {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      renderCalendar();
+    };
+
+    const openModal = (day) => {
+      selectedDay = day;
+      const month = currentMonth + 1;
+      modalHeader.textContent = `${selectedDay}/${month}/${currentYear}`;
+      renderHourlyTasks();
+      taskModal.style.display = 'flex';
+    };
+
+    const closeModal = () => {
+      taskModal.style.display = 'none';
+    };
+
+    const renderHourlyTasks = () => {
+      hourlyTasks.innerHTML = '';
+      for (let hour = 9; hour <= 18; hour++) {
+        const hourSlot = document.createElement('div');
+        hourSlot.classList.add('hour-slot');
+        const time = `${hour}:00 - ${hour + 1}:00`;
+        const button = document.createElement('button');
+        button.textContent = 'Görev Ekle';
+        button.onclick = () => addTask(hour);
+        hourSlot.innerHTML = `<span>${time}</span>`;
+        hourSlot.appendChild(button);
+        hourlyTasks.appendChild(hourSlot);
+      }
+    };
+
+    const addTask = (hour) => {
+      const task = prompt(`Saat ${hour}:00 - ${hour + 1}:00 için görev ekleyin:`);
+      if (task) {
+        alert(`Görev "${task}" başarıyla eklendi!`);
+      }
+    };
+
+    renderCalendar();
+  </script>
+</body>
+</html>
