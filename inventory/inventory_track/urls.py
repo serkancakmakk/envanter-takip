@@ -45,6 +45,8 @@ urlpatterns = [
     path('undo_assignments/<str:company_code>', views.undo_assignments, name='undo_assignments'),
     path('undo_assignment_view/<str:batch_id>/<str:company_code>', views.undo_assignment_view, name='undo_assignment_view'),
     #
+    
+    #
     path('calendar',views.calendar,name="calendar"),
     path('companies/',views.companies,name="companies"),
     path('check_code/<int:code>/', views.check_code, name='check_code'),

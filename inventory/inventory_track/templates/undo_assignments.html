@@ -9,7 +9,27 @@
 {% block icon %}
     <link rel="shortcut icon" href="{% static 'icon/form.png' %}" type="image/x-icon">
 {% endblock icon %}
-    
+    <!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+<!-- Buttons CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<!-- Buttons JS -->
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+
+<!-- PDF ve Excel İçin Gerekli Kütüphaneler -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <div class="container mt-5">
     <div class="row">
         <div class="col-12">
@@ -18,12 +38,94 @@
                 <span class="input-group-text"><i class="fas fa-search"></i></span>
                 <input type="text" id="searchInput" class="form-control" placeholder="Batch ID ile ara...">
             </div>
-
-            <div class="table-responsive">
+<style>
+    .table-responsive {
+        margin-top: 20px;
+        border-radius: 12px;
+        overflow: hidden; /* Kenar taşmalarını önler */
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Tablo gölgesi */
+        background: #ffffff;
+    }
+    
+    .table {
+        margin: 0;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 12px; /* Kenarları yuvarlatır */
+        overflow: hidden;
+    }
+    
+    .table thead {
+        background: linear-gradient(90deg,#FFC145,rgb(255, 153, 0)); /* Yeşil tonlarda gradient */
+        color: #fff;
+    }
+    
+    .table thead th {
+        font-weight: bold;
+        text-transform: uppercase;
+        padding: 1rem;
+        text-align: center;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .table tbody tr {
+        transition: background 0.3s ease;
+    }
+    
+    .table tbody tr:nth-child(even) {
+        background: #f8f9fa; /* Açık gri arka plan */
+    }
+    
+    .table tbody tr:hover {
+        background: rgba(76, 175, 80, 0.15); /* Hover'da yeşilimsi arka plan */
+    }
+    
+    .table tbody td {
+        padding: 0.8rem;
+        text-align: center;
+        vertical-align: middle;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 0.95rem;
+    }
+    
+    .table tbody .text-muted {
+        font-size: 1.2rem;
+        color: #9e9e9e;
+    }
+    
+    .table tbody .fas {
+        color: #f57c00; /* Uyarı rengi */
+    }
+    
+    .table .btn-undo-asset {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        font-weight: bold;
+        background: linear-gradient(90deg, #ff6f00, #ff8f00); /* Turuncu gradient */
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .table .btn-undo-asset:hover {
+        background: linear-gradient(90deg, #ff8f00, #ff6f00); /* Gradient değişimi */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Hover gölgesi */
+        transform: translateY(-2px); /* Hafif yükselme */
+    }
+    
+    .table .btn-undo-asset:active {
+        transform: translateY(0); /* Tıklama durumunda sıfırlama */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+</style>
+            <div class="table-responsive font-poppins">
                 <table class="table table-striped table-hover mt-3">
                     <thead class="thead-dark">
                         <tr>
-                            <th>Batch ID</th>
+                            <th title="Sistem tarafından otomatik atanır">Batch ID</th>
                             <th>Ürün Adı</th>
                             <th>Atama Yapan</th>
                             <th>Atama Alınan</th>
@@ -35,16 +137,16 @@
                             {% for assignment in items %}
                                 <tr>
                                     <td>{{assignment.batch_id}}</td>
-                                    <td>{{ assignment.product.name }}</td>
+                                    <td> {{ assignment.product.brand.name }} - {{ assignment.product.category.name }} - {{ assignment.product.model.name }}</td>
                                     <td>{{ assignment.assign_by.username }}</td>
                                     <td>{{ assignment.assign_to.username }}</td>
                                     <td>
                                         <form action="{% url 'undo_assignment_view' assignment.batch_id company.code %}" method="POST" class="delete-assignment-form">
                                             {% csrf_token %}
                                             <button type="button" 
-                                                    class="btn btn-danger btn-sm delete-assignment-btn"
+                                                    class="btn btn-undo-asset btn-sm delete-assignment-btn  mt-2"
                                                     data-id="{{ assignment.id }}">
-                                                <i class="fas fa-trash-alt"></i> Sil
+                                                    <strong>Teslim Al</strong> <i class='bx bx-reset mt-2'></i>
                                             </button>
                                         </form>
                                     </td>
@@ -105,5 +207,49 @@
         });
     });
 </script>
-
+<style>
+    .btn-undo-asset {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: #fff;
+        background: linear-gradient(90deg, #ff7a18, #ffba00); /* Gradient renk geçişi */
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease-in-out;
+        cursor: pointer;
+        text-transform: uppercase;
+    }
+    
+    .btn-undo-asset i {
+        font-size: 1.2rem;
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    .btn-undo-asset:hover {
+        background: linear-gradient(90deg, #ffba00, #ff7a18); /* Ters gradient */
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+        transform: translateY(-3px); /* Yükselme efekti */
+    }
+    
+    .btn-undo-asset:hover i {
+        transform: rotate(-360deg); /* İkon döndürme efekti */
+    }
+    
+    .btn-undo-asset:active {
+        transform: translateY(0); /* Tıklama sırasında düzelme efekti */
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    }
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+    .font-poppins{
+        font-family: "Poppins", serif;
+  font-weight: 400;
+  font-style: normal;
+    }
+</style>
 {% endblock content %}
