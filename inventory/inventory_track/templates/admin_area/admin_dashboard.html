@@ -121,197 +121,246 @@
                     }
                 </style>
                 <div class="col-lg-6 float-end" id="products">
-                    <div class="card">
-                        <div class="card-header"><h5>Zimmet Aksiyonları</h5></div>
-                        <div class="card-body">
-                            <table class="table table-responsive table-hover text-center">
-                                <thead>
-                                    <tr>
-                                        <th id="form">Form</th>
-                                        <th>Ürün</th>
-                                        <th>Atayan Kişi</th>
-                                        <th>Atanan Kişi</th>
-                                        <th>Durum</th>
-                                        <th>Atama Tarihi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for asset in assignments %}
-                                    <tr>
-                                        <!-- Ürün Bilgisi -->
-                                        <style>
-                                            #batch_icon {
-                                                text-decoration: none;
-                                                color: #FFAF00;
-                                                transition: transform 0.3s ease, color 0.3s ease; /* Animasyon için transition ekledik */
-                                            }
-                                            #batch_icon:hover {
-                                                transform: scale(1.2); /* Doğru kullanım */
-                                                color: #FFA500; /* İsteğe bağlı, renk değişimi */
-                                            }
-                                        </style>
-                                        <td id="form"><a id="batch_icon" href="{% url 'asset_assignment_form' asset.batch_id %}" class='bx bx-package'></i></td>
-                                        <td>{{ asset.product }}</td>
-                                        
-                                        <!-- Atayan Kişi -->
-                                        <td>
-                                            {% if asset.assign_by %}
-                                            {{ asset.assign_by }}
-                                             <i class='bx bx-right-arrow-alt'></i>
-                                            {% else %}
-                                            Belirtilmemiş
-                                            {% endif %}
-                                        </td>
-                                        
-                                        <!-- Atanan Kişi -->
-                                        <td>
-                                            {% if asset.assign_to %}
-                                            {{ asset.assign_to }}
-                                            {% else %}
-                                            Belirtilmemiş
-                                            {% endif %}
-                                        </td>
-                                        
-                                        <!-- Durum -->
-                                        <td>
-                                            {{ asset.assign_status }}
-                                        </td>
-                                        
-                                        <!-- Atama Tarihi -->
-                                        <td>
-                                            {{ asset.assign_date|date:"d.m.Y H:i" }}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                    <div class="card border-0"> <!-- Kenarlık kaldırıldı -->
+                        <div class="card-header bg-gradient-primary text-white rounded-top"> <!-- Gradient arka plan eklendi -->
+                            <h5 class="mb-0">Zimmet Aksiyonları</h5>
                         </div>
-                    </div>
-            </div>
-            <div class="col-lg-6 float-start mr-4" id="products">
-                <div class="card">
-                    <div class="card-header"><h5>Kullanıcılar</h5></div>
-                    <div class="card-body">
-                        <table class="table table-responsive table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Kullanıcı Adı</th>
-                                    <th>Adı Soyadı</th>
-                                    <th>E-Posta</th>
-                                    <th>Durum</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user in users.object_list %}
-                                    <tr>
-                                        <td>{{ user.username }}</td>
-                                        <td>{{ user.first_name }} {{ user.last_name }}</td>
-                                        <td>{{ user.email }}</td>
-                                        <td>
-                                            {% if user.is_active %}
-                                                <span class="badge bg-success">Aktif</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">İnaktif</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        <style>
-                            .pagination {
-                                margin-top: 20px;
-                                font-size: 14px;
-                            }
-                            
-                            .pagination .page-item .page-link {
-                                color: #5A5A5A;
-                                border: 1px solid #DDD;
-                                border-radius: 5px;
-                                padding: 8px 12px;
-                                transition: all 0.3s ease;
-                            }
-                            
-                            .pagination .page-item .page-link:hover {
-                                color: #fff;
-                                background-color: #007BFF;
-                                border-color: #007BFF;
-                                text-decoration: none;
-                            }
-                            
-                            .pagination .page-item.active .page-link {
-                                color: #fff;
-                                background-color: #007BFF;
-                                border-color: #007BFF;
-                            }
-                            
-                            .pagination .page-item.disabled .page-link {
-                                color: #AAA;
-                                pointer-events: none;
-                                background-color: #F8F9FA;
-                            }
-                            
-                            .pagination-info {
-                                font-size: 16px;
-                                margin-bottom: 10px;
-                                color: #333;
-                            }
-                        </style>
-            
-                        <!-- Sayfa Değiştirme (Pagination) -->
-                        <div class="pagination mt-3">
-                            <nav>
-                                <ul class="pagination justify-content-center">
-                                    {% if users.has_previous %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page=1">&laquo; İlk</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ users.previous_page_number }}">Önceki</a>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link">&laquo; İlk</span>
-                                        </li>
-                                        <li class="page-item disabled">
-                                            <span class="page-link">Önceki</span>
-                                        </li>
-                                    {% endif %}
-            
-                                    <!-- Sayfa Numaraları -->
-                                    {% for num in users.paginator.page_range %}
-                                        {% if num == users.number %}
-                                            <li class="page-item active">
-                                                <span class="page-link">{{ num }}</span>
-                                            </li>
-                                        {% else %}
-                                            <li class="page-item">
-                                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                                            </li>
-                                        {% endif %}
-                                    {% endfor %}
-            
-                                    {% if users.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ users.next_page_number }}">Sonraki</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ users.paginator.num_pages }}">Son &raquo;</a>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link">Sonraki</span>
-                                        </li>
-                                        <li class="page-item disabled">
-                                            <span class="page-link">Son &raquo;</span>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </nav>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-borderless mb-0"> <!-- Kenarlık kaldırıldı -->
+                                    <thead>
+                                        <tr class="bg-light"> <!-- Başlık arka planı hafif gri yapıldı -->
+                                            <th class="text-center">Form</th>
+                                            <th class="text-center">Ürün</th>
+                                            <th  class="text-center">Atayan </th>
+                                            <th class="text-center">Atanan </th>
+                                            <th class="text-center">Durum</th>
+                                            <th class="text-center">Atama Tarihi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for asset in assignments %}
+                                        <tr class="table-row bg-white shadow-sm rounded mb-2 transition-all"> <!-- Satırlara kart görünümü ve animasyon eklendi -->
+                                            <!-- Ürün Bilgisi -->
+                                            <td class="text-center align-middle">
+                                                <a id="batch_icon" href="{% url 'asset_assignment_form' asset.batch_id %}" class="text-warning text-decoration-none">
+                                                    <i class='bx bx-package bx-md'></i> <!-- Icon boyutu arttırıldı -->
+                                                </a>
+                                            </td>
+                                            <td class="text-center align-middle">{{ asset.product }}</td>
+                                            
+                                            <!-- Atayan Kişi -->
+                                            <td class="text-center align-middle">
+                                                {% if asset.assign_by %}
+                                                {{ asset.assign_by }} <i class='bx bx-right-arrow-alt'></i>
+                                                {% else %}
+                                                <span class="text-muted">Belirtilmemiş</span>
+                                                {% endif %}
+                                            </td>
+                                            
+                                            <!-- Atanan Kişi -->
+                                            <td class="text-center align-middle">
+                                                {% if asset.assign_to %}
+                                                {{ asset.assign_to }}
+                                                {% else %}
+                                                <span class="text-muted">Belirtilmemiş</span>
+                                                {% endif %}
+                                            </td>
+                                            
+                                            <!-- Durum -->
+                                            <td class="text-center align-middle">
+                                                <span class="badge bg-gradient-info">{{ asset.assign_status }}</span> <!-- Gradient badge eklendi -->
+                                            </td>
+                                            
+                                            <!-- Atama Tarihi -->
+                                            <td class="text-center align-middle">
+                                                {{ asset.assign_date|date:"d.m.Y H:i" }}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+                
+                <style>
+                    /* Gradient arka planlar */
+                    .bg-gradient-primary {
+                        background: linear-gradient(135deg,rgb(255, 202, 27),rgb(252, 166, 37));
+                    }
+                    .bg-gradient-info {
+                        background: linear-gradient(135deg, #17ead9, #6078ea);
+                    }
+                
+                    /* Tablo satırlarına kart görünümü ve animasyon */
+                    .table-row {
+                        
+                        border-radius: 10px;
+                        transition: transform 0.3s ease, box-shadow 0.3s ease;
+                    }
+                    .table-row:hover {
+                        transform: translateY(-5px); /* Hover durumunda yükselme efekti */
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Gölge efekti */
+                    }
+                
+                    /* Icon hover efekti */
+                    #batch_icon {
+                        transition: transform 0.3s ease, color 0.3s ease;
+                    }
+                    #batch_icon:hover {
+                        transform: scale(1.2);
+                        color: #ff6f61 !important; /* Eğlenceli bir renk */
+                    }
+                
+                    /* Başlık stil ayarları */
+                    .card-header {
+                        border-radius: 10px 10px 0 0;
+                    }
+                
+                    /* Tablo içeriği için padding ayarı */
+                    .table td, .table th {
+                        padding: 1rem;
+                    }
+                </style>
+                
+                <div class="col-lg-6 float-end" id="products">
+                    <div class="card border-0"> <!-- Kenarlık kaldırıldı -->
+                        <div class="card-header bg-gradient-primary text-white rounded-top"> <!-- Gradient arka plan eklendi -->
+                            <h5 class="mb-0">Kullanıcılar</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-borderless mb-0"> <!-- Kenarlık kaldırıldı -->
+                                    <thead>
+                                        <tr class="bg-light"> <!-- Başlık arka planı hafif gri yapıldı -->
+                                            <th class="text-center">Kullanıcı Adı</th>
+                                            <th class="text-center">Adı Soyadı</th>
+                                            <th class="text-center">E-Posta</th>
+                                            <th class="text-center">Durum</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in users.object_list %}
+                                        <tr class="table-row bg-white shadow-sm rounded mb-2 transition-all"> <!-- Satırlara kart görünümü ve animasyon eklendi -->
+                                            <td class="text-center align-middle">{{ user.username }}</td>
+                                            <td class="text-center align-middle">{{ user.first_name }} {{ user.last_name }}</td>
+                                            <td class="text-center align-middle">{{ user.email }}</td>
+                                            <td class="text-center align-middle">
+                                                {% if user.is_active %}
+                                                    <span class="badge bg-gradient-info">Aktif</span> <!-- Gradient badge eklendi -->
+                                                {% else %}
+                                                    <span class="badge bg-gradient-danger">İnaktif</span> <!-- Gradient badge eklendi -->
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <style>
+                    /* Gradient arka planlar */
+                    .bg-gradient-success {
+                        background: linear-gradient(135deg, #28a745, #1e7e34);
+                    }
+                    .bg-gradient-info {
+                        background: linear-gradient(135deg, #17ead9, #6078ea);
+                    }
+                    .bg-gradient-danger {
+                        background: linear-gradient(135deg, #dc3545, #bb2d3b);
+                    }
+                
+                    /* Tablo satırlarına kart görünümü ve animasyon */
+                    .table-row {
+                        border-radius: 10px;
+                        transition: transform 0.3s ease, box-shadow 0.3s ease;
+                    }
+                    .table-row:hover {
+                        transform: translateY(-5px); /* Hover durumunda yükselme efekti */
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Gölge efekti */
+                    }
+                
+                    /* Başlık stil ayarları */
+                    .card-header {
+                        border-radius: 10px 10px 0 0;
+                    }
+                
+                    /* Tablo içeriği için padding ayarı */
+                    .table td, .table th {
+                        padding: 1rem;
+                    }
+                
+                    /* Badge hover efekti */
+                    .badge {
+                        transition: transform 0.3s ease, color 0.3s ease;
+                    }
+                    .badge:hover {
+                        transform: scale(1.1);
+                        color: #fff;
+                    }
+                </style>
+                
+                <!-- Stil ve Font İyileştirmeleri -->
+                <style>
+                    .card-header {
+                        background-color: #0062cc;
+                        color: #fff;
+                    }
+                
+                    .pagination .page-item .page-link {
+                        color: #007bff;
+                        background-color: transparent;
+                        border: 1px solid #007bff;
+                        border-radius: 5px;
+                        padding: 8px 12px;
+                        font-size: 14px;
+                        transition: all 0.3s ease;
+                    }
+                
+                    .pagination .page-item .page-link:hover {
+                        color: #fff;
+                        background-color: #007bff;
+                        border-color: #007bff;
+                        text-decoration: none;
+                    }
+                
+                    .pagination .page-item.active .page-link {
+                        color: #fff;
+                        background-color: #0062cc;
+                        border-color: #0062cc;
+                    }
+                
+                    .pagination .page-item.disabled .page-link {
+                        color: #ddd;
+                        background-color: #f8f9fa;
+                    }
+                
+                    .pagination-info {
+                        font-size: 16px;
+                        font-weight: bold;
+                        color: #333;
+                    }
+                
+                    table th, table td {
+                        vertical-align: middle;
+                    }
+                
+                    .badge {
+                        font-size: 12px;
+                        padding: 5px 10px;
+                        text-transform: uppercase;
+                    }
+                
+                    .table-hover tbody tr:hover {
+                        background-color: #f1f1f1;
+                    }
+                </style>
+                
         <div class="row">
             <style>
                 .save-product{
@@ -428,8 +477,7 @@ color:rgb(38, 43, 87) !important;
                 <div class="card">
                     <div class="card-body text-center">
                         <h5 class="card-title">Sağa Yaslanan Kart</h5>
-                        {% comment %} <canvas id="unassignedDoughnutChart" width="100" height="100"></canvas> {% endcomment %}
-                        <p class="mt-3">Toplam: {{ total_products }} ürün</p>
+                        
                     </div>
                 </div>
             </div>

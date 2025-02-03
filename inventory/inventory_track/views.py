@@ -1147,25 +1147,25 @@ def create_user_in_ldap(django_user):
         return False
 
 # REPORTS 
+from itertools import chain
 def user_based_asset(request, company_code):
     # Şirketi getir
     company = get_company(company_code)
 
-    # Kullanıcı şirket koduna göre filtreleme
+    # Kullanıcıları filtrele
     if request.user.company.code == settings.MASTER_COMPANY:
-        # MASTER_COMPANY'ye bağlı kullanıcılar
-        users = CustomUser.objects.filter(company=company)
+        users = chain(
+            CustomUser.objects.filter(company=company),
+            LdapUser.objects.filter(company_code=company_code)
+        )
     else:
-        # Diğer şirketlerdeki LDAP kullanıcıları
-        users = LdapUser.objects.filter(company=company)
+        users = LdapUser.objects.filter(company_code=company_code)
 
-    # Bağlam (context) oluştur
+    # Bağlamı oluştur ve şablonu render et
     context = {
         'users': users,
         'company': company,
     }
-
-    # Şablonu render et
     return render(request, 'reports/user_based_asset.html', context)
 def calendar(request):
     users = LdapUser.objects.all()

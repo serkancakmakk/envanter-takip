@@ -9,34 +9,13 @@
 {% block icon %}
     <link rel="shortcut icon" href="{% static 'icon/form.png' %}" type="image/x-icon">
 {% endblock icon %}
-    <!-- DataTables CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-
-<!-- Buttons CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
-
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-
-<!-- DataTables JS -->
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
-<!-- Buttons JS -->
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-
-<!-- PDF ve Excel İçin Gerekli Kütüphaneler -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <div class="container mt-5">
     <div class="row">
         <div class="col-12">
             <!-- Arama Alanı -->
             <div class="mb-4 input-group">
                 <span class="input-group-text"><i class="fas fa-search"></i></span>
-                <input type="text" id="searchInput" class="form-control" placeholder="Batch ID ile ara...">
+                <input type="text" id="searchInput" class="form-control" placeholder="Batch ID ve Seri Numarası ile ara...">
             </div>
 <style>
     .table-responsive {
@@ -121,22 +100,68 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 </style>
+<style>
+                            
+    /* Clipboard butonuna stil */
+    .copy-batch-id {
+        cursor: pointer;
+        font-size: 18px;
+        color: #007bff;
+        transition: color 0.3s;
+    }
+    
+    .copy-batch-id:hover {
+        color: #0056b3;
+    }
+    .custom-toast {
+        position: fixed;
+        right: 20px;
+        top: 10px;
+        background: #28a745;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 5px;
+        font-size: 14px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        opacity: 1;
+        transition: opacity 0.3s ease-in-out;
+        z-index: 9999;
+    }
+    
+    .custom-toast.hide {
+        opacity: 0;
+    }
+    
+
+</style>
             <div class="table-responsive font-poppins">
                 <table class="table table-striped table-hover mt-3">
                     <thead class="thead-dark">
                         <tr>
+                            <th title="Sistem tarafından otomatik atanır">#</th>
                             <th title="Sistem tarafından otomatik atanır">Batch ID</th>
                             <th>Ürün Adı</th>
+                            <th>Seri Numarası</th>
                             <th>Atama Yapan</th>
                             <th>Atama Alınan</th>
                             <th>İşlem</th>
                         </tr>
                     </thead>
                     <tbody>
+                       
+
                         {% for batch_id, items in assignments.items %}
                             {% for assignment in items %}
                                 <tr>
-                                    <td>{{assignment.batch_id}}</td>
+                                    <td style="position: relative;">
+                                        <i class="fa-solid fa-clipboard-question copy-batch-id" data-batch="{{ assignment.batch_id }}"></i>
+                                    </td>
+                                    <td title="{{ assignment.batch_id}}" class="batch-id-container">
+                                       {{ assignment.batch_id|slice:40 }}
+                                    </td>
+                                
+                                    
+                                    <td title="{{ assignment.product.serial_number}}">{{assignment.product.serial_number}}</td>
                                     <td> {{ assignment.product.brand.name }} - {{ assignment.product.category.name }} - {{ assignment.product.model.name }}</td>
                                     <td>{{ assignment.assign_by.username }}</td>
                                     <td>{{ assignment.assign_to.username }}</td>
@@ -166,46 +191,70 @@
         </div>
     </div>
 </div>
-
+<script>
+    document.querySelectorAll('.copy-batch-id').forEach(icon => {
+        icon.addEventListener('click', function() {
+            let batchId = this.getAttribute('data-batch'); // Batch ID'yi al
+            
+            // Batch ID'yi panoya kopyala
+            navigator.clipboard.writeText(batchId).then(() => {
+                showToast('Batch ID kopyalandı!');
+            }).catch(err => {
+                console.error('Kopyalama hatası:', err);
+            });
+        });
+    });
+    
+    // Toast mesajını gösteren fonksiyon
+    function showToast(message) {
+        let toast = document.createElement('div');
+        toast.className = 'custom-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+    
+        setTimeout(() => {
+            toast.classList.add('hide');
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+    
+    
+</script>
 <script>
     // Arama işlevi
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-        let searchTerm = e.target.value.toLowerCase();
-        let rows = document.querySelectorAll('tbody tr');
-        
-        rows.forEach(row => {
-            let batchId = row.querySelector('td').textContent.toLowerCase();
+    document.querySelectorAll('.copy-batch-id').forEach(icon => {
+        icon.addEventListener('click', function() {
+            let batchId = this.getAttribute('data-batch'); // Batch ID'yi al
             
+            // Batch ID'yi panoya kopyala
+            navigator.clipboard.writeText(batchId).then(() => {
+                showToast('Batch ID kopyalandı!');
+            }).catch(err => {
+                console.error('Kopyalama hatası:', err);
+                showToast('Kopyalama işlemi başarısız oldu.');
+            });
+        });
+    });
+// Arama işlevi
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    let searchTerm = e.target.value.toLowerCase();
+    let rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        let batchIdElement = row.querySelector('td.batch-id-container'); // Elemanı al
+
+        // Elemanın varlığını kontrol et
+        if (batchIdElement) {
+            let batchId = batchIdElement.getAttribute('title').toLowerCase(); // 'title' özelliğini al
+
             if (batchId.includes(searchTerm)) {
                 row.style.display = ''; // Satırı göster
             } else {
                 row.style.display = 'none'; // Satırı gizle
             }
-        });
+        }
     });
-
-    // SweetAlert ile onaylama
-    document.querySelectorAll('.delete-assignment-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault(); // Butonun varsayılan davranışını engelle
-            let form = this.closest('form'); // İlgili formu al
-
-            Swal.fire({
-                title: 'Emin misiniz?',
-                text: 'Bu zimmeti geri teslim almak üzeresiniz.',
-                icon: 'info',
-                showCancelButton: true,
-                confirmButtonColor: '#3bd630',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Evet, Al',
-                cancelButtonText: 'İptal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit(); // Onaylanırsa formu gönder
-                }
-            });
-        });
-    });
+});
 </script>
 <style>
     .btn-undo-asset {
