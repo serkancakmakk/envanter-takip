@@ -4,114 +4,96 @@
 
 
     <meta name="csrf-token" content="{{ csrf_token }}">
+    
     <title>Category, Brand, Model</title>
     <div class="container mt-5">
         <div class="row">
             <!-- Category Section -->
             <div class="col-lg-4">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white text-center">
                         <h5 class="mb-0">Kategoriler</h5>
                     </div>
                     <div class="card-body">
                         <form id="category-form" data-url="{% url 'add_category' company.code %}">
                             {% csrf_token %}
                             <div class="mb-3">
-                                <label for="new-category-name" class="form-label">Yeni Kategori Ekle</label>
-                                <input type="text" class="form-control" id="new-category-name" placeholder="Category Name" required>
+                                <label for="new-category-name" class="form-label fw-bold">Yeni Kategori Ekle</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="new-category-name" placeholder="Kategori Adı" required>
+                                    <button type="submit" class="btn btn-primary">Ekle</button>
+                                </div>
                             </div>
-                            <meta name="csrf-token" content="{{ csrf_token }}">
-
-                            <button type="submit" class="btn btn-primary w-100">Kaydet</button>
                         </form>
                         <hr>
-                        <h6>Var Olan Kategoriler</h6>
-                        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-                        <!-- DataTables JS -->
-                        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
-                        
-                        <!-- DataTables CSS -->
-                        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
-                        
-                        <!-- DataTable Başlatma -->
-                        <script>
-                            $(document).ready(function() {
-                                $('#category-table2').DataTable();
-                            });
-                        </script>                        
-                        <table id="category-table2" class="table table-striped mt-3">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Category Adı</th>
-                                    <th>İşlem</th>
-                                </tr>
-                            </thead>
-                            <style>
-                                .sorting_asc{
-                                    background-color: blue;
-                                }
-                            </style>
-                            <tbody id="category-table-body2">
-                                {% for category in categories %}
-                                    <tr>
-                                        <td>{{ category.id }}</td>
-                                        <td>{{ category.name }}</td>
-                                        <td>
-                                            <button type="button" class="btn btn-warning delete-category-btn" data-id="{{ category.id }}" data-name="{{ category.name }}">Sil</button>
-                                        </td>
-                                    </tr>
-                                {% empty %}
-                                    <tr>
-                                        <td colspan="3">Henüz kategori eklenmemiş.</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                        <h6 class="fw-bold text-center text-muted">Mevcut Kategoriler</h6>
+            
+                        <!-- Kategori Listesi -->
+                        <div class="category-list mt-3 category-table2"></div>
+            
+                        <!-- Sayfalama Butonları -->
+                        <nav>
+                            <ul class="pagination justify-content-center category-pagination"></ul>
+                        </nav>
                     </div>
                 </div>
             </div>
+
+<style>
+    .category-card {
+        transition: all 0.3s ease-in-out;
+        border-left: 5px solid var(--line-clr);
+    }
+    .category-card:hover {
+        background-color: #f8f9fa;
+        transform: scale(1.02);
+    }
+    .btn-danger {
+        transition: all 0.3s ease;
+    }
+    .btn-danger:hover {
+        background-color: #dc3545;
+    }
+</style>
 
             <!-- Brand Section -->
-            <div class="col-lg-3">
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Markalar</h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="brand-form" data-url="{% url 'add_brand' company.code %}">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="new-category-select" class="form-label">Kategori Seç</label>
-                                <select class="form-select" id="new-category-select" required>
-                                    <option value="">Kategori Seç</option>
-                                    <!-- Kategoriler burada yüklenecek -->
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="new-brand-name" class="form-label">Yeni Marka Ekle</label>
+           <!-- Marka Formu ve Listesi -->
+           <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-success text-white text-center">
+                    <h5 class="mb-0">Markalar</h5>
+                </div>
+                <div class="card-body">
+                    <form id="brand-form" data-url="{% url 'add_brand' company.code %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="new-category-select" class="form-label fw-bold">Kategori Seç</label>
+                            <select class="form-select" id="new-category-select" required>
+                                <option value="">Kategori Seç</option>
+                                <!-- Kategoriler burada yüklenecek -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new-brand-name" class="form-label fw-bold">Yeni Marka Ekle</label>
+                            <div class="input-group">
                                 <input type="text" class="form-control" id="new-brand-name" placeholder="Marka Adı" required>
+                                <button type="submit" class="btn btn-success">Ekle</button>
                             </div>
-                            <button type="submit" class="btn btn-success w-100">Marka Ekle</button>
-                        </form>
-                        <hr>
-                        <h6>Var Olan Markalar</h6>
-                        <table id="brand-table" class="table table-striped mt-3">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Marka Adı</th>
-                                    <th>Kategori</th>
-                                </tr>
-                            </thead>
-                            <tbody id="brand-table-body">
-                                <!-- Markalar buraya yüklenecek -->
-                            </tbody>
-                        </table>
-                    </div>
+                        </div>
+                    </form>
+                    <hr>
+                    <h6 class="fw-bold text-center text-muted">Mevcut Markalar</h6>
+        
+                    <!-- Marka Listesi -->
+                    <div class="brand-list mt-3 brand-table2"></div>
+        
+                    <!-- Sayfalama Butonları -->
+                    <nav>
+                        <ul class="pagination justify-content-center brand-pagination"></ul>
+                    </nav>
                 </div>
             </div>
+        </div>
 
             <!-- Model Section -->
             <div class="col-lg-3">
@@ -142,20 +124,10 @@
 
                         </form>
                         <hr>
-                        <h6>Var Olan Modeller</h6>
-                        <table class="table table-striped mt-3">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Model Adı</th>
-                                    <th>Marka</th>
-                                    <th>Kategori</th>
-                                </tr>
-                            </thead>
-                            <tbody id="model-table-body">
-                                <!-- Models will be populated here -->
-                            </tbody>
-                        </table>
+                        <h6 class="fw-bold text-center text-muted">Mevcut Kategoriler</h6>
+            
+                        <!-- Kategori Listesi -->
+                        <div class="model-list mt-3 model-table2"></div>
                     </div>
                 </div>
             </div>
@@ -259,7 +231,7 @@
 <script src="{% static 'js/status.js' %}"></script>  <!-- Öncelikli JS dosyası -->
 <script src="{% static 'js/brand.js' %}"></script>  <!-- Öncelikli JS dosyası -->
 <script src="{% static 'js/load_model.js' %}"></script>  <!-- loadCategories fonksiyonunu burada tanımlayın -->
-
+<script src="{% static 'js/loadCategoryOptions.js' %}"></script>
 <script src="{% static 'js/category.js' %}"></script>  
 <script src="{% static 'js/add_category.js' %}"></script>  <!-- Kategoriyi ekleyin -->
 <script src="{% static 'js/add_brand.js' %}"></script>  <!-- Kategoriyi ekleyin -->

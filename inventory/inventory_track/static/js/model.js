@@ -76,7 +76,7 @@ function loadModels(brandId) {
             console.log('Modeller alındı');
 
             // Tablo ve dropdown'u temizle
-            let modelTableBody = $("#model-table-body");
+            let modelTableBody = $(".model-list");
             let modelSelect = $("#new-model-select");
 
             modelTableBody.empty();
@@ -89,12 +89,13 @@ function loadModels(brandId) {
             models.forEach(model => {
                 // Tabloya ekleme
                 modelTableBody.append(`
-                    <tr>
-                        <td>${model.id}</td>
-                        <td>${model.name}</td>
-                        <td>${model.brand_name}</td>
-                        <td>${model.category_name}</td>
-                    </tr>
+                    <div class="category-card d-flex justify-content-between align-items-center p-2 mb-2 rounded bg-light">
+                                <span class="fw-semibold">${model.name} ${model.brand_name || "Bilinmeyen Kategori"}</span>
+                                <button type="button" class="btn btn-sm btn-danger delete-category-btn" 
+                                    data-id="${model.id}" data-name="${model.name}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
                 `);
 
                 // Dropdown'a ekleme

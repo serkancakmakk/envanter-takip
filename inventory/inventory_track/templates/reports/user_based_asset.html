@@ -9,7 +9,7 @@
 {% block title %}
 <title>Atama Raporları</title>
 {% endblock title %}
-
+<input type="hidden" id = "company-code" value = "{{company.code}}">
 <style>
     body {
         font-family: 'Poppins', sans-serif;
@@ -160,6 +160,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const userSelect = document.getElementById('user-select');
+        const companyCode = $("#company-code").val(); // Şirket kodunu HTML içinden al
         const assetTableBody = document.querySelector('#asset-table tbody');
 
         userSelect.addEventListener('change', function () {
@@ -174,7 +175,7 @@
             }
 
             // Simülasyon için API çağrısı
-            fetch(`/api/get_assign_product/2/${userId}/`)
+            fetch(`/api/get_assign_product/${companyCode}/${userId}/`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Ağ hatası');

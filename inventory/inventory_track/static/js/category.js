@@ -1,139 +1,49 @@
+// loadCategories.js
 $(document).ready(function () {
-    // Kategorileri yükleme fonksiyonu
-    function loadCategories() {
-        $.ajax({
-            url: `/api/get_categories_api/${companyCode}/`,
-            type: "GET",
-            success: function (response) {
-                let categories = response.categories;
-                let categorySelect = $("#new-category-select");
-                let categoryTableBody = $("#category-table-body2");
+    let currentPage = 1;
+    const csrfToken = $("input[name='csrfmiddlewaretoken']").val();
+    const companyCode = $("#company-code").val(); // Şirket kodunu HTML içinden al
 
-                // Select ve tabloyu temizle
-                categorySelect.empty().append('<option value="">Kategori Seç</option>');
-                categoryTableBody.empty();
+    /** 📌 Kategori Listesini Sayfalama ile Yükle */
+    function loadCategories(page = 1) {
+        $.get(`/api/get_categories_api/${companyCode}/`, { page })
+            .done(function (response) {
+                let categoryList = $(".category-list").empty();
+                let pagination = $(".category-pagination").empty();
+                let categoryOption = $(".category-select").empty();
 
-                // Her kategori için seçenek ve tablo satırı ekle
-                categories.forEach(category => {
-                    categorySelect.append(`<option value="${category.id}">${category.category_name}</option>`);
-                    categoryTableBody.append(`
-                        <tr>
-                            <td>${category.id}</td>
-                            <td>${category.category_name}</td>
-                            <td>
-                                <button type="button" class="btn btn-warning delete-category-btn" 
-                                    data-id="${category.id}" 
-                                    data-name="${category.category_name}">
-                                    Sil
+                if (response.categories.length > 0) {
+                    response.categories.forEach(category => {
+                        categoryList.append(`
+                            <div class="category-card d-flex justify-content-between align-items-center p-2 mb-2 rounded bg-light">
+                                <span class="fw-semibold">${category.category_name}</span>
+                                <button type="button" class="btn btn-sm btn-danger delete-category-btn" data-id="${category.id}" data-name="${category.category_name}">
+                                    <i class="fas fa-trash-alt"></i>
                                 </button>
-                            </td>
-                        </tr>
-                    `);
-                });
-
-                // DataTable yeniden başlat
-                initializeDataTable();
-            },
-            error: function () {
-                errorSwal("Kategori verileri yüklenirken bir hata oluştu.");
-            }
-        });
-    }
-
-    // DataTable başlatma fonksiyonu
-    function initializeDataTable() {
-        if ($.fn.DataTable.isDataTable('#category-table')) {
-            $('#category-table').DataTable().destroy();
-        }
-        $('#category-table').DataTable();
-    }
-
-    // Kategoriyi ekleme fonksiyonu
-    function addCategory(e) {
-        e.preventDefault();
-        let categoryName = $("#new-category-name").val().trim();
-        let url = $(this).data("url");
-        let csrfToken = $("input[name='csrfmiddlewaretoken']").val();
-
-        // Kategori adı boş olmamalı
-        if (!categoryName) {
-            return errorSwal("Kategori adı boş olamaz.");
-        }
-
-        $.ajax({
-            url: url,
-            type: "POST",
-            data: {
-                name: categoryName,
-                csrfmiddlewaretoken: csrfToken,
-            },
-            success: function (response) {
-                if (response.success) {
-                    successSwal(response.message);
-                    $("#new-category-name").val("");
-                    loadCategories();
+                            </div>
+                        `);
+                    });
                 } else {
-                    errorSwal(response.message);
+                    categoryList.append('<p class="text-muted text-center">Henüz kategori eklenmemiş.</p>');
                 }
-            },
-            error: function () {
-                errorSwal("Kategori eklenirken bir hata oluştu.");
-            }
-        });
+
+                // 🔹 Sayfalama Butonları
+                if (response.total_pages > 1) {
+                    for (let i = 1; i <= response.total_pages; i++) {
+                        pagination.append(`<li class="page-item ${i === page ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`);
+                    }
+                }
+            })
+            .fail(() => errorSwal("Kategori verileri yüklenirken bir hata oluştu."));
     }
 
-    // Kategoriyi silme fonksiyonu
-    $(document).on('click', '.delete-category-btn', function () {
-        let categoryId = $(this).data('id');
-        let categoryName = $(this).data('name');
-        let csrfToken = $("meta[name='csrf-token']").attr("content");
-
-        // Kullanıcı onayı al
-        Swal.fire({
-            title: `${categoryName} kategorisini silmek istediğinizden emin misiniz?`,
-            text: "Bu işlem geri alınamaz!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Evet, Sil',
-            cancelButtonText: 'Hayır, İptal Et',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: `/api/delete_category_api/${categoryId}/`,
-                    type: 'DELETE',
-                    headers: {
-                        'X-CSRFToken': csrfToken
-                    },
-                    success: function (response) {
-                        Swal.fire(
-                            'Silindi!',
-                            `${categoryName} kategorisi başarıyla silindi.`,
-                            'success'
-                        );
-                        loadCategories();
-                    },
-                    error: function () {
-                        Swal.fire(
-                            'Hata!',
-                            'Silme işlemi sırasında bir hata oluştu.',
-                            'error'
-                        );
-                    }
-                });
-            } else if (result.dismiss === Swal.DismissReason.cancel) {
-                Swal.fire(
-                    'İptal Edildi',
-                    'Silme işlemi iptal edildi.',
-                    'info'
-                );
-            }
-        });
+    /** 📌 Sayfa Değiştirildiğinde (Kategori Listesi için) */
+    $(document).on("click", ".category-pagination .page-link", function (e) {
+        e.preventDefault();
+        currentPage = $(this).data("page");
+        loadCategories(currentPage);
     });
 
-    // Sayfa yüklendiğinde kategorileri yükle
+    // 📌 Sayfa Yüklendiğinde Kategori Listesini Getir
     loadCategories();
-
-    // Form gönderiminde kategoriyi ekle
-    $("#category-form").on("submit", addCategory);
 });

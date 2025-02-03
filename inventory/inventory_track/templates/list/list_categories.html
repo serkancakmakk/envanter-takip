@@ -1,0 +1,175 @@
+{% extends '_base.html' %}
+
+{% block content %}
+{% load static %}
+{% if messages %}
+    <div class="alert alert-danger">
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+{% endif %}
+<style>
+    body {
+        background-color: #f8f9fa;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .custom-table-container {
+        max-width: 900px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .custom-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        overflow: hidden;
+        border-radius: 10px;
+    }
+
+    .custom-table thead {
+        background: linear-gradient(135deg, #007bff, #6610f2);
+        color: white;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .custom-table th,
+    .custom-table td {
+        padding: 12px;
+        text-align: center;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .custom-table tbody tr {
+        background-color: #ffffff;
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .custom-table tbody tr:hover {
+        transform: scale(1.02);
+        background: #f1f3f5;
+    }
+
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    .checkbox-container input {
+        transform: scale(1.2);
+    }
+
+    .btn-custom {
+        background: linear-gradient(135deg, #007bff, #6610f2);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        border: none;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .btn-custom:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="custom-table-container">
+        <h2 class="text-center text-primary fw-bold fs-3 mb-4">Filtrele</h2>
+        
+        <div class="checkbox-container">
+            <form action="{% url 'list_categories' company_code %}" method="GET">
+                <input type="checkbox" name="category" value="1" {% if request.GET.category %}checked{% endif %} id="categoryCheckbox">
+                <label for="categoryCheckbox">Kategorileri Göster</label>
+
+                <input type="checkbox" name="brands" value="1" {% if request.GET.brands %}checked{% endif %} id="brandsCheckbox">
+                <label for="brandsCheckbox">Markaları Göster</label>
+
+                <input type="checkbox" name="models" value="1" {% if request.GET.models %}checked{% endif %} id="modelsCheckbox">
+                <label for="modelsCheckbox">Modelleri Göster</label>
+
+                <button type="submit" class="btn btn-custom">Getir</button>
+            </form>
+        </div>
+
+        {% if categories %}
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Kategori</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in categories %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ category.name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if brands %}
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Marka</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for brand in brands %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ brand.name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if models %}
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Model</th>
+                        <th>Marka</th>
+                        <th>Kategori</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for model in models %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ model.name }}</td>
+                        <td>{{ model.brand.name }}</td>
+                        <td>{{ model.brand.category.name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock content %}

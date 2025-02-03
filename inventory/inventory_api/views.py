@@ -34,57 +34,78 @@ class GetModelsAPI(APIView):
             print(f"Error: {str(e)}")  # Hata mesajını konsola yazdır
             return Response({'error': 'Sunucu hatası. Lütfen tekrar deneyin.'}, status=500)
 
-
+from rest_framework.pagination import PageNumberPagination
 class GetBrandsAPI(APIView):
-
+    
     def get(self, request, company_code):
-        # Kategori ID'sini al
-        print('apiye geldi')
-        category_id = request.GET.get('category_id')
-        # Şirketi al (company_code'ye göre)
+        # Şirketi al
         company = get_object_or_404(Company, code=company_code)
+        print(company)
+        # Markaları filtrele
+        category_id = request.GET.get('category_id')
+        if category_id:
+            category = get_object_or_404(Category, id=category_id, company=company)
+            print(category)
+            brands = Brand.objects.filter(category=category, company=company).order_by('id')
+            print(brands)
+        else:
+            brands = Brand.objects.filter(company=company, is_active=True).order_by('id')
+            print(brands)
+        print(brands)
+        # Eğer `all=true` parametresi varsa, tüm markaları döndür
+        print(request.GET.get)
+        if request.GET.get('all'):
+            brand_data = [
+                {'id': brand.id, 'name': brand.name, 'category_name': brand.category.name if brand.category else 'Bilinmeyen'}
+                for brand in brands
+            ]
+            return Response({'brands': brand_data})
 
-        # Kategori ID'sinin sağlanıp sağlanmadığını kontrol et
-        if not category_id:
-            return Response({'error': 'Kategori ID\'si gereklidir.'}, status=400)
+        # Sayfalama işlemi
+        page_number = request.GET.get('page', 1)
+        paginator = Paginator(brands, 5)  # Sayfa başına 5 marka
+        page_obj = paginator.get_page(page_number)
 
-        # Kategorinin geçerli olup olmadığını kontrol et
-        try:
-            category = Category.objects.get(id=category_id)
-        except Category.DoesNotExist:
-            return Response({'error': 'Geçerli bir kategori bulunamadı.'}, status=404)
-
-        # Markaları kategori ve şirket bazında filtrele
-        brands = Brand.objects.filter(category_id=category_id, company=company)
-
-        # Eğer marka yoksa, hata mesajı dön
-        if not brands.exists():
-            return Response({'info': 'Belirtilen kategoride marka bulunamadı.'}, status=404)
-
-        # Markaların verilerini al
-        brands_data = [
-            {'id': brand.id, 'category_name': brand.category.name, 'name': brand.name}
-            for brand in brands
+        brand_data = [
+            {'id': brand.id, 'name': brand.name, 'category_name': brand.category.name if brand.category else 'Bilinmeyen'}
+            for brand in page_obj
         ]
-        
-        return Response({'brands': brands_data})
+        print(brand_data)
+        return Response({
+            'brands': brand_data,
+            'total_pages': paginator.num_pages,
+            'current_page': page_obj.number
+        })
+
+from django.core.paginator import Paginator
 class GetCategoriesAPI(APIView):
 
     def get(self, request, company_code):
-    
-        # Şirketi al (company_code'ye göre)
         company = get_object_or_404(Company, code=company_code)
-        
-        # Markaları kategori ve şirket bazında filtrele
-        categories = Category.objects.filter(company=company,is_active=True)
+        categories = Category.objects.filter(company=company).order_by('-id')
 
-        # Markaların verilerini al
+        if request.GET.get('all'):
+            logger.info('all a geldi')  # `print` yerine `logger`
+            category_data = [
+                {'id': category.id, 'category_name': category.name}
+                for category in categories
+            ]
+            return Response({'categories': category_data})
+
+        page_number = request.GET.get('page', 1)
+        paginator = Paginator(categories, 5)
+        page_obj = paginator.get_page(page_number)
+
         category_data = [
-            {'id': category.id, 'category_name': category.name,}
-            for category in categories
+            {'id': category.id, 'category_name': category.name}
+            for category in page_obj
         ]
-        print(category_data)
-        return Response({'categories': category_data})
+
+        return Response({
+            'categories': category_data,
+            'total_pages': paginator.num_pages,
+            'current_page': page_obj.number
+        })
 
 from django.http import JsonResponse
 from rest_framework import status
@@ -147,7 +168,7 @@ class GetStatusAPI(APIView):
             {'id': status.id, 'name': status.name}  # 'status' nesnesinin her birini kullan
             for status in statuses
         ]
-        
+        print(statuses_data)
         return Response({'statuses': statuses_data}, status=status.HTTP_200_OK)
 class CreateStatusAPIView(APIView):
     def post(self, request, company_code):
@@ -198,42 +219,76 @@ from .serializers import AssetAssignmentSerializer
 import logging
 
 logger = logging.getLogger(__name__)
+from django.contrib.auth import get_user_model
+
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.views import APIView
+from django.utils.translation import gettext as _
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ReportAssetAssignmentView(APIView):
     def get(self, request, company_id, user_id):
-        # Gelen parametreleri kontrol etmek için log yazdır
-        logger.debug(_("Company ID: %(company_id)s, User ID: %(user_id)s") % {'company_id': company_id, 'user_id': user_id})
+        # Kullanıcı modellerini al
+        UserModel = get_user_model()  # Django'nun User modeli
+        ldap_user_model = LdapUser  # Özel LDAP kullanıcı modeli
+        
+        # Önce User tablosunda ara
+        user = UserModel.objects.filter(id=user_id).first()
+        
+        # Eğer User tablosunda yoksa LdapUser tablosunda ara
+        if not user:
+            user = ldap_user_model.objects.filter(id=user_id).first()
+        
+        # Kullanıcı bulunamazsa hata döndür
+        if not user:
+            return Response(
+                {"detail": _("Belirtilen kullanıcı bulunamadı.")},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        # Kullanıcıyı getir veya 404 döndür
-        user = get_object_or_404(LdapUser, id=user_id)
         logger.debug(_("User: %(username)s") % {'username': user.username})
 
         # Yetkilendirme kontrolü: Master company veya aynı şirket
         if not (
-            request.user.company.code == settings.MASTER_COMPANY or  # Master company kontrolü
-            request.user.company.id == user.company.id               # Şirket ID'si eşleşiyor mu?
+            request.user.company.code == settings.MASTER_COMPANY or
+            request.user.company.id == user.company.id
         ):
             return Response(
                 {"detail": _("Bu verilere erişim izniniz yok.")},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Kullanıcıya atanan varlıkları filtrele
-        assignments = AssetAssignment.objects.filter(assign_to_object_id=user.id, company_id=company_id)
+        # Kullanıcının atamalarını almak için ContentType belirle
+        user_content_type_id = ContentType.objects.get_for_model(user).id
+        print(user.id)
+        print(user_content_type_id)
+        print(company_id)
+        # Kullanıcıya atanmış varlıkları getir
+        assignments = AssetAssignment.objects.filter(
+            assign_to_content_type_id=user_content_type_id,
+            assign_to_object_id=user.id,
+            company_id=company_id
+        )
+        print('assignment',assignments)
         logger.debug(_("Assignments: %(assignments)s") % {'assignments': assignments})
 
-        # Atama bulunamadığında 404 döndür
         if not assignments.exists():
             return Response(
                 {"detail": _("Kullanıcı (%(username)s) için atanmış bir varlık bulunamadı.") % {'username': user.username}},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Varlık atamaları varsa serialize et
+        # Verileri serialize et
         serialized_data = AssetAssignmentSerializer(assignments, many=True)
-        logger.debug(_("Serialized Data Type: %(data_type)s") % {'data_type': type(serialized_data)})
 
         return Response(serialized_data.data, status=status.HTTP_200_OK)
+
 
 
 class GetProductsAPI(APIView):
@@ -275,4 +330,25 @@ class GetProductsAPI(APIView):
         return Response({
             'results': products_data,
             'has_next': end < total_count  # Daha fazla sayfa olup olmadığını belirtir
+        }, status=status.HTTP_200_OK)
+class GetProductsStatusAPI(APIView):
+    def get(self, request, company_code):
+        company = get_company(company_code)
+        statutes = ProductStatus.objects.filter(
+            company=company,
+              # Kategori adına göre filtreleme
+        )
+        
+        statutes_data = [
+            {
+                'name': statutes.name,
+                
+            }
+            
+            for status in statutes
+                
+        ]
+        
+        return Response({
+            'statutes': statutes,
         }, status=status.HTTP_200_OK)

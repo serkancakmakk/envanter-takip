@@ -376,61 +376,63 @@ from django.views.decorators.csrf import csrf_exempt
 
 def create_product(request, company_code):
     company = get_object_or_404(Company, code=company_code)
-    print('product ekleme viewsina geldi')
-    
+    print('product ekleme viewsine geldi')
+
     if request.method == 'POST':
         category_id = request.POST.get('category')
         brand_id = request.POST.get('brand')
         model_id = request.POST.get('model')
         serial_number = request.POST.get('serial_number')
         status = request.POST.get('status')
+
         product_status = get_object_or_404(ProductStatus, id=status)
         print(f"Product status ID: {product_status.id}")
-        
+
         # Aynı seri numarasından ürün var mı kontrol et
         if Product.objects.filter(serial_number=serial_number, company=company).exists():
             return JsonResponse({'success': False, 'error': f"Bu '{serial_number}' seri numaralı ürün zaten kayıtlı."})
 
-        # Get the instances
+        # Kullanıcı modeli ve ContentType belirleme
+        user = request.user
+        user_content_type = ContentType.objects.get_for_model(user.__class__)
+
         try:
             category = Category.objects.get(id=category_id)
             brand = Brand.objects.get(id=brand_id)
             model = Model.objects.get(id=model_id)
 
-            # Create the product
+            # Ürünü oluştur
             product = Product.objects.create(
                 category=category,
                 brand=brand,
                 model=model,
                 serial_number=serial_number,
                 company=company,
-                created_by=request.user,
+                created_by_content_type_id=user_content_type.id,  # User modelinin content type'ı
+                created_by_object_id=user.id,  # Kullanıcının ID'si
                 status=product_status,
             )
 
-            # Return JSON response with the new product data
+            # JSON yanıtı döndür
             return JsonResponse({
                 'success': True,
                 'product': {
-                    # 'id': product.id,
                     'category': product.category.name,
                     'brand': product.brand.name,
                     'model': product.model.name,
-                    'unit': product.model.unit,  # Model'den gelen 'unit' değeri
+                    'unit': product.model.unit,
                     'serial_number': product.serial_number,
                     'status': product.status.name,
                     'date_joined': product.date_joined,
-                    'created_by': f"{product.created_by.first_name} {product.created_by.last_name}"
+                    'created_by': f"{user.first_name} {user.last_name}"
                 }
             })
-        
+
         except Exception as e:
-            # Hata mesajını konsola yazdır
             print(f"Error creating product: {str(e)}")
             return JsonResponse({'success': False, 'error': f"Bir hata oluştu: {str(e)}"})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
 
 
 from datetime import date       
@@ -714,21 +716,30 @@ def add_category(request, company_code):
     return JsonResponse({'error': 'Geçersiz istek'}, status=400)
 
 
-def add_brand_view(request,company_code):
+def add_brand_view(request, company_code):
     """
-    Marka Eklemek için
+    Marka eklemek için
     """
     print('Add branda geldi')
-    company = get_object_or_404(Company,code = company_code)
+    company = get_object_or_404(Company, code=company_code)
+
     if request.method == 'POST':
         form = BrandForm(request.POST, company=company)
         if form.is_valid():
+            brand_name = form.cleaned_data['name']
+
+            # Aynı şirkette aynı isimde marka var mı kontrol et
+            if Brand.objects.filter(company=company, name__iexact=brand_name).exists():
+                return JsonResponse({'success': False, 'errors': {'name': ['Bu isimde bir marka zaten mevcut.']}}, status=400)
+
             brand = form.save(commit=False)
             brand.company = company
             brand.created_by = request.user
             brand.save()
             return JsonResponse({'success': True, 'message': 'Marka başarıyla eklendi!'})
-        return JsonResponse({'success': False, 'errors': form.errors})
+
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
@@ -739,6 +750,7 @@ def add_model_view(request, company_code):
         if form.is_valid():
             model = form.save(commit=False)
             model.company = company
+            model.is_active = True
             model.created_by = request.user
             model.save()
             return JsonResponse({'success': True, 'message': 'Model başarıyla eklendi!'})
@@ -1161,3 +1173,49 @@ def calendar(request):
         'users':users,
     }
     return render(request,'admin_area/calendar1.html',context)
+from django.shortcuts import render
+from django.http import JsonResponse
+from .models import Category, Product  # Product içinde brand ve model var
+
+from django.shortcuts import render
+from django.http import JsonResponse
+from .models import Category, Product  # Product modelinde brand ve model var
+
+from django.shortcuts import render
+from .models import Category, Product
+
+def list_categories(request, company_code):
+    # Şirketi al
+    company = get_company(company_code)
+
+    # Filtreleme için başlangıçta boş liste
+    categories = []
+    brands = []
+    models = []
+
+    # Geçerli olmayan bir filtreleme seçeneği varsa, uyarı mesajı ekle
+    valid_filters = ['category', 'brands', 'models']
+
+    if request.method == "GET":
+        # Eğer geçerli olmayan bir parametre varsa
+        invalid_filters = [key for key in request.GET.keys() if key not in valid_filters]
+        if invalid_filters:
+            # Geçersiz parametre varsa, uyarı mesajı göster
+            messages.error(request, f"Bu seçenekler: {', '.join(invalid_filters)} bulunmuyor.")
+
+        if request.GET.get('category'):  # Kategoriler
+            categories = Category.objects.filter(company=company)
+        if request.GET.get('brands'):  # Markalar
+            brands = Brand.objects.filter(company=company)
+        if request.GET.get('models'):  # Modeller
+            models = Model.objects.filter(company=company)
+
+    context = {
+        'categories': categories,
+        'brands': brands,
+        'models': models
+    }
+
+    return render(request, 'list/list_categories.html', context)
+
+

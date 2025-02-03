@@ -24,7 +24,7 @@ urlpatterns = [
     # path('custom_user_login/',views.custom_login,name="custom_user_login"),
     path('edit_ldap_config/<str:company_code>', views.edit_ldap_config, name='edit_ldap_config'),
     # Ekleme işlemleri
-    path('create_product/<str:company_code>', views.create_product, name='create_product'),
+    path('create_product/<str:company_code>/', views.create_product, name='create_product'),
     path('product_page/<str:company_code>', views.product_page, name='product_page'),
     path('inventory/<str:company_code>', views.inventory, name='inventory'),
     #add
@@ -57,4 +57,8 @@ urlpatterns = [
     # report
     # 
     path("user_based_asset/<str:company_code>", views.user_based_asset, name="user_based_asset"),
+    #
+    # list
+    # 
+    path("list_categories/<str:company_code>", views.list_categories, name="list_categories"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
